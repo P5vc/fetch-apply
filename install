@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+
+RED = "\033[0;31m"
+GREEN = "\033[0;32m"
+BLUE = "\033[0;34m"
+CYAN = "\033[0;36m"
+PURPLE = "\033[0;35m"
+NO_COLOR = "\033[0m"
+
+set -euo pipefail
+
+
+function install()
+{
+	PA_GIT_URL = "https://github.com/P5vc/PullApply.git"
+	CRONTAB_ENTRY = "25 11 * * *"
+
+	echo -e "\n\n${BLUE}Where would you like to install Pull Apply?\n${CYAN}Installation Path (/var/lib):\t${NO_COLOR}"
+	read INSTALLATION_PATH
+	if [ INSTALLATION_PATH == "" ]
+	then
+		INSTALLATION_PATH = "/var/lib"
+	fi
+
+	if [ -e "${INSTALLATION_PATH}/pullapply" ]
+	then
+		echo -e "${RED}Error! An existing Pull Apply installation was found. Exiting...${NO_COLOR}"
+		exit 1
+	fi
+
+	echo -e "\n\n${BLUE}What is your operations git URL?\n${CYAN}URL (https://github.com/P5vc/ServerConfigurations.git):\t${NO_COLOR}"
+	read OPERATIONS_GIT_URL
+	if [ OPERATIONS_GIT_URL == "" ]
+	then
+		OPERATIONS_GIT_URL = "https://github.com/P5vc/ServerConfigurations.git"
+	fi
+
+	echo -e "\n\n${BLUE}What is the desired hostname for this server?\n${CYAN}Hostname (server):\t${NO_COLOR}"
+	read SERVER_HOSTNAME
+	if [ SERVER_HOSTNAME == "" ]
+	then
+		SERVER_HOSTNAME = "server"
+	fi
+
+	if [ "$(/usr/bin/which git)" == "" ]
+	then
+		echo -e "\n\n${RED}Error! Git was not found. Attempting to install...${PURPLE}"
+		apt-get update
+		apt-get install git -y
+		echo -e "${NO_COLOR}"
+	else
+		echo -e "\n\n${GREEN}Git detected...${NO_COLOR}"
+	fi
+
+	echo -e "\n\n${GREEN}Beginning installation...${PURPLE}"
+
+	hostnamectl set-hostname $SERVER_HOSTNAME
+
+	mkdir -p ${INSTALLATION_PATH}/pullapply
+	git clone $PA_GIT_URL ${INSTALLATION_PATH}/pullapply
+	ln -sf ${INSTALLATION_PATH}/pullapply/pa /usr/bin/pa
+
+	git clone OPERATIONS_GIT_URL ${INSTALLATION_PATH}/pullapply/operations
+
+	echo "$(cat /etc/crontab | grep -v ${INSTALLATION_PATH}/pullapply)" > /etc/crontab
+	echo "${CRONTAB_ENTRY} root ${INSTALLATION_PATH}/pullapply/pa >> /var/log/pullapply.log 2>&1" >> /etc/crontab
+
+	echo -e "$\n\n{GREEN}Installation complete!"
+}
+
+install
