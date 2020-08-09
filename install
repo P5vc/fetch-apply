@@ -28,6 +28,13 @@ function install()
 		exit 1
 	fi
 
+	echo -e "\n\n${BLUE}Where would you like to create a log file?\n${CYAN}Log file (/var/log/fetchapply.log):\t${NO_COLOR}"
+	read LOG_FILE_PATH
+	if [ LOG_FILE_PATH == "" ]
+	then
+		LOG_FILE_PATH = "/var/log/fetchapply.log"
+	fi
+
 	echo -e "\n\n${BLUE}What is your operations git URL?\n${CYAN}URL (https://github.com/P5vc/ServerConfigurations.git):\t${NO_COLOR}"
 	read OPERATIONS_GIT_URL
 	if [ OPERATIONS_GIT_URL == "" ]
@@ -58,12 +65,16 @@ function install()
 
 	mkdir -p ${INSTALLATION_PATH}/fetchapply
 	git clone $PA_GIT_URL ${INSTALLATION_PATH}/fetchapply
-	ln -sf ${INSTALLATION_PATH}/fetchapply/pa /usr/bin/pa
+	ln -sf ${INSTALLATION_PATH}/fetchapply/fa /usr/bin/fa
 
 	git clone OPERATIONS_GIT_URL ${INSTALLATION_PATH}/fetchapply/operations
 
+	echo "FA_ROOT = ${INSTALLATION_PATH}/fetchapply" >> ${INSTALLATION_PATH}/fetchapply/config
+	echo "LOG_FILE_PATH = ${LOG_FILE_PATH}" >> ${INSTALLATION_PATH}/fetchapply/config
+	echo "OPERATIONS_GIT_URL = ${OPERATIONS_GIT_URL}" >> ${INSTALLATION_PATH}/fetchapply/config
+
 	echo "$(cat /etc/crontab | grep -v ${INSTALLATION_PATH}/fetchapply)" > /etc/crontab
-	echo "${CRONTAB_ENTRY} root ${INSTALLATION_PATH}/fetchapply/pa >> /var/log/fetchapply.log 2>&1" >> /etc/crontab
+	echo "${CRONTAB_ENTRY} root ${INSTALLATION_PATH}/fetchapply/fa 2>&1" >> /etc/crontab
 
 	echo -e "$\n\n{GREEN}Installation complete!"
 }
