@@ -1,25 +1,25 @@
 #!/usr/bin/env bash
 
-RED = "\033[0;31m"
-GREEN = "\033[0;32m"
-BLUE = "\033[0;34m"
-CYAN = "\033[0;36m"
-PURPLE = "\033[0;35m"
-NO_COLOR = "\033[0m"
+RED="\033[0;31m"
+GREEN="\033[0;32m"
+BLUE="\033[0;34m"
+CYAN="\033[0;36m"
+PURPLE="\033[0;35m"
+NO_COLOR="\033[0m"
 
 set -euo pipefail
 
 
 function install()
 {
-	PA_GIT_URL = "https://github.com/P5vc/FetchApply.git"
-	CRONTAB_ENTRY = "25 11 * * *"
+	PA_GIT_URL="https://github.com/P5vc/FetchApply.git"
+	CRONTAB_ENTRY="25 11 * * *"
 
 	echo -e "\n\n${BLUE}Where would you like to install Fetch Apply?\n${CYAN}Installation Path (/var/lib):\t${NO_COLOR}"
 	read INSTALLATION_PATH
 	if [ INSTALLATION_PATH == "" ]
 	then
-		INSTALLATION_PATH = "/var/lib"
+		INSTALLATION_PATH="/var/lib"
 	fi
 
 	if [ -e "${INSTALLATION_PATH}/fetchapply" ]
@@ -32,21 +32,21 @@ function install()
 	read LOG_FILE_PATH
 	if [ LOG_FILE_PATH == "" ]
 	then
-		LOG_FILE_PATH = "/var/log/fetchapply.log"
+		LOG_FILE_PATH="/var/log/fetchapply.log"
 	fi
 
 	echo -e "\n\n${BLUE}What is your operations git URL?\n${CYAN}URL (https://github.com/P5vc/ServerConfigurations.git):\t${NO_COLOR}"
 	read OPERATIONS_GIT_URL
 	if [ OPERATIONS_GIT_URL == "" ]
 	then
-		OPERATIONS_GIT_URL = "https://github.com/P5vc/ServerConfigurations.git"
+		OPERATIONS_GIT_URL="https://github.com/P5vc/ServerConfigurations.git"
 	fi
 
 	echo -e "\n\n${BLUE}What is the desired hostname for this server?\n${CYAN}Hostname (server):\t${NO_COLOR}"
 	read SERVER_HOSTNAME
 	if [ SERVER_HOSTNAME == "" ]
 	then
-		SERVER_HOSTNAME = "server"
+		SERVER_HOSTNAME="server"
 	fi
 
 	if [ "$(/usr/bin/which git)" == "" ]
@@ -69,9 +69,9 @@ function install()
 
 	git clone OPERATIONS_GIT_URL ${INSTALLATION_PATH}/fetchapply/operations
 
-	echo "FA_ROOT = ${INSTALLATION_PATH}/fetchapply" >> ${INSTALLATION_PATH}/fetchapply/config
-	echo "LOG_FILE_PATH = ${LOG_FILE_PATH}" >> ${INSTALLATION_PATH}/fetchapply/config
-	echo "OPERATIONS_GIT_URL = ${OPERATIONS_GIT_URL}" >> ${INSTALLATION_PATH}/fetchapply/config
+	echo "FA_ROOT=${INSTALLATION_PATH}/fetchapply" >> ${INSTALLATION_PATH}/fetchapply/config
+	echo "LOG_FILE_PATH=${LOG_FILE_PATH}" >> ${INSTALLATION_PATH}/fetchapply/config
+	echo "OPERATIONS_GIT_URL=${OPERATIONS_GIT_URL}" >> ${INSTALLATION_PATH}/fetchapply/config
 
 	echo "$(cat /etc/crontab | grep -v ${INSTALLATION_PATH}/fetchapply)" > /etc/crontab
 	echo "${CRONTAB_ENTRY} root ${INSTALLATION_PATH}/fetchapply/fa 2>&1" >> /etc/crontab
