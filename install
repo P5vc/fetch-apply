@@ -12,19 +12,19 @@ set -euo pipefail
 
 function install()
 {
-	PA_GIT_URL = "https://github.com/P5vc/PullApply.git"
+	PA_GIT_URL = "https://github.com/P5vc/FetchApply.git"
 	CRONTAB_ENTRY = "25 11 * * *"
 
-	echo -e "\n\n${BLUE}Where would you like to install Pull Apply?\n${CYAN}Installation Path (/var/lib):\t${NO_COLOR}"
+	echo -e "\n\n${BLUE}Where would you like to install Fetch Apply?\n${CYAN}Installation Path (/var/lib):\t${NO_COLOR}"
 	read INSTALLATION_PATH
 	if [ INSTALLATION_PATH == "" ]
 	then
 		INSTALLATION_PATH = "/var/lib"
 	fi
 
-	if [ -e "${INSTALLATION_PATH}/pullapply" ]
+	if [ -e "${INSTALLATION_PATH}/fetchapply" ]
 	then
-		echo -e "${RED}Error! An existing Pull Apply installation was found. Exiting...${NO_COLOR}"
+		echo -e "${RED}Error! An existing Fetch Apply installation was found. Exiting...${NO_COLOR}"
 		exit 1
 	fi
 
@@ -56,14 +56,14 @@ function install()
 
 	hostnamectl set-hostname $SERVER_HOSTNAME
 
-	mkdir -p ${INSTALLATION_PATH}/pullapply
-	git clone $PA_GIT_URL ${INSTALLATION_PATH}/pullapply
-	ln -sf ${INSTALLATION_PATH}/pullapply/pa /usr/bin/pa
+	mkdir -p ${INSTALLATION_PATH}/fetchapply
+	git clone $PA_GIT_URL ${INSTALLATION_PATH}/fetchapply
+	ln -sf ${INSTALLATION_PATH}/fetchapply/pa /usr/bin/pa
 
-	git clone OPERATIONS_GIT_URL ${INSTALLATION_PATH}/pullapply/operations
+	git clone OPERATIONS_GIT_URL ${INSTALLATION_PATH}/fetchapply/operations
 
-	echo "$(cat /etc/crontab | grep -v ${INSTALLATION_PATH}/pullapply)" > /etc/crontab
-	echo "${CRONTAB_ENTRY} root ${INSTALLATION_PATH}/pullapply/pa >> /var/log/pullapply.log 2>&1" >> /etc/crontab
+	echo "$(cat /etc/crontab | grep -v ${INSTALLATION_PATH}/fetchapply)" > /etc/crontab
+	echo "${CRONTAB_ENTRY} root ${INSTALLATION_PATH}/fetchapply/pa >> /var/log/fetchapply.log 2>&1" >> /etc/crontab
 
 	echo -e "$\n\n{GREEN}Installation complete!"
 }
