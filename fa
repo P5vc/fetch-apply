@@ -13,8 +13,8 @@ host=$(hostname)
 directory=""
 specificHostDirectory="No"
 
-pauseFile="${FA_ROOT}/pause"
-lockFile="${FA_ROOT}/lock"
+pauseFile="${FA_ROOT}/status/pause"
+lockFile="${FA_ROOT}/status/lock"
 
 fetch="Yes"
 force="No"
@@ -253,6 +253,7 @@ do
 	if [ "$argument" == "--help" ]
 	then
 		usage
+		exit 0
 	elif [ "$argument" == "--no-fetch" ]
 	then
 		fetch="No"
@@ -330,33 +331,42 @@ then
 elif [ "$cmd" == "recover" ]
 then
 	rm $lockFile
+	log Success "Lock file successfully removed..."
 elif [ "$cmd" == "pause" ]
 then
 	touch $pauseFile
+	log Success "Fetch Apply successfully paused..."
 elif [ "$cmd" == "resume" ]
 then
 	rm $pauseFile
+	log Success "Fetch Apply successfully resumed..."
 elif [ "$cmd" == "list-classes" ]
 then
-	ls -1 "${FA_ROOT}/classes"
+	ls -1 "${FA_ROOT}/operations/classes"
 elif [ "$cmd" == "list-modules" ]
 then
-	ls -1 "${FA_ROOT}/modules"
+	ls -1 "${FA_ROOT}/operations/modules"
 elif [ "$cmd" == "list-roles" ]
 then
-	ls -1 "${FA_ROOT}/roles"
+	ls -1 "${FA_ROOT}/operations/roles"
 elif [ "$cmd" == "" ]
 then
 	if [ -e "$lockFile" ]
 	then
-		log Warning "Lock file found. This means that an error occurred during\na previous execution. You may remove this lock file by\nrunning 'fa recover'.\nExiting..."
-		exit 1
+		if [ "$force" == "No" ]
+		then
+			log Warning "Lock file found. This means that an error occurred during\na previous execution. You may remove this lock file by\nrunning 'fa recover'.\nExiting..."
+			exit 1
+		fi
 	fi
 
 	if [ -e "$pauseFile" ]
 	then
-		log Warning "Pause file found. This means that a hold has been manually placed\non execution. You may remove this pause file by\nrunning 'fa resume'.\nExiting..."
-		exit 0
+		if [ "$force" == "No" ]
+		then
+			log Warning "Pause file found. This means that a hold has been manually placed\non execution. You may remove this pause file by\nrunning 'fa resume'.\nExiting..."
+			exit 0
+		fi
 	fi
 
 
