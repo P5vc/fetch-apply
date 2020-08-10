@@ -79,7 +79,7 @@ function install()
 
 	git clone $OPERATIONS_GIT_URL ${INSTALLATION_PATH}/fetchapply/operations
 
-	echo "FA_ROOT=${INSTALLATION_PATH}/fetchapply" >> /etc/fetchapply
+	echo "FA_ROOT=${INSTALLATION_PATH}/fetchapply" > /etc/fetchapply
 	echo "LOG_FILE_PATH=${LOG_FILE_PATH}" >> /etc/fetchapply
 	echo "OPERATIONS_GIT_URL=${OPERATIONS_GIT_URL}" >> /etc/fetchapply
 
