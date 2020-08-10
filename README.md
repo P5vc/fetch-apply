@@ -168,3 +168,11 @@ Every host directory must contain the following files (although they may be left
 Initializers are installation/set-up scripts that are designed to only be run once, when first configuring a system, and after that shall not be run again.
 
 Initializers are created by adding a file with the desired commands to the `initializers` directory.
+
+#### Modules
+
+Modules are pieces of code that have a specific task or job. Modules are generally related to a single program, and are labeled with that program's name.
+
+To create a module, make a new directory within the `modules` directory. The title of this directory will be the module's name. Within the new directory you just made, create the following two, required files: `variables` and `apply`.
+
+The `variables` file will contain any variables specific to the module. If no extra variables are needed, this file may be left blank. The `apply` module must contain the code to run, in order for the module to be executed. You may create as many additional, supporting files as you wish (such as templates), within the same directory.
