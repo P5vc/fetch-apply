@@ -140,3 +140,31 @@ These servers can be easily split-up into the following two categories:
 Servers within the `webserver` class will likely share similar maintenance tasks, installation procedures, etc. The same applies to the database servers. Therefore, instead of having to re-write code to set up each server, we can simply create two classes: `webserver` and `database`.
 
 Because each webserver's hostname contains `webserver` somewhere within it, and each database server's hostname contains `database` somewhere within it, yet no webserver's hostname contains `database` within it and no database server's hostname contains `webserver` within it, Fetch Apply will automatically identify and associate each server with its correct class.
+
+Every class directory must contain the following files (although they may be left blank):
+
+- `initializers`
+- `modules`
+- `roles`
+- `variables`
+
+#### Hosts
+
+Host directories are contained within a class directory, and are used to override a class's `initializers`, `modules`, `roles`, and `variables`, for that specific host.
+
+A host directory must be contained within a class directory that applies to the system it is targeting, and the host directory's name must be an exact match to the hostname of the target system.
+
+For the applicable host, all class files (except for class variables) will be ignored, and only files contained within the host directory will be executed.
+
+Every host directory must contain the following files (although they may be left blank):
+
+- `initializers`
+- `modules`
+- `roles`
+- `variables`
+
+#### Initializers
+
+Initializers are installation/set-up scripts that are designed to only be run once, when first configuring a system, and after that shall not be run again.
+
+Initializers are created by adding a file with the desired commands to the `initializers` directory.
