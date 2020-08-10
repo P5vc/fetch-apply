@@ -114,3 +114,29 @@ Fetch Apply will automatically scan those directories and load any applicable va
 - The `variables` file found in a module directory is to be used for storing variables that will only apply to that one, specific module.
 
 All applicable variables will be loaded, and be accessible for use within your code (without the need to "source" anything). That means that not only will you have access to the variables stored in the same directory as, say, a specific host, but you will also be able to reference that host's class's variables, as well as the global variables. In the case that two identical variables are declared, precedence is as follows (from winner to loser): modules -> hosts -> classes -> global
+
+#### Classes
+
+Classes are used to distinguish between types of systems. Within the `classes` directory, you may create specifically-named directories to separate your systems/devices/servers into distinct groups.
+
+Fetch Apply will determine which class applies by searching for the first directory within the `classes` directory, that contains the system it's installed-on's hostname.
+
+For example, let's say that you have the following servers that you need to maintain:
+
+- Webservers
+  - `webserver1`
+  - `new-york-webserver2`
+  - `Webserver-fallback`
+- Database Servers
+  - `DATABASE-server-1`
+  - `database2`
+  - `databasethree`
+
+These servers can be easily split-up into the following two categories:
+
+- `webserver`
+- `database`
+
+Servers within the `webserver` class will likely share similar maintenance tasks, installation procedures, etc. The same applies to the database servers. Therefore, instead of having to re-write code to set up each server, we can simply create two classes: `webserver` and `database`.
+
+Because each webserver's hostname contains `webserver` somewhere within it, and each database server's hostname contains `database` somewhere within it, yet no webserver's hostname contains `database` within it and no database server's hostname contains `webserver` within it, Fetch Apply will automatically identify and associate each server with its correct class.
