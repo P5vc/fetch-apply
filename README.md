@@ -14,6 +14,7 @@ Transparent Server Configuration and Management
   - [Learning the Command](https://github.com/P5vc/FetchApply/blob/master/README.md#learning-the-command "Learning the Command")
   - [Learning the Framework](https://github.com/P5vc/FetchApply/blob/master/README.md#learning-the-framework "Learning the Framework")
     - [Base Structure](https://github.com/P5vc/FetchApply/blob/master/README.md#base-structure "Base Structure")
+    - [Special Files](https://github.com/P5vc/FetchApply/blob/master/README.md#special-files "Special Files")
     - [Variables](https://github.com/P5vc/FetchApply/blob/master/README.md#variables "Variables")
     - [Classes](https://github.com/P5vc/FetchApply/blob/master/README.md#classes "Classes")
     - [Hosts](https://github.com/P5vc/FetchApply/blob/master/README.md#hosts "Hosts")
@@ -90,7 +91,7 @@ Commands:
 
 ### Learning the Framework
 
-Fetch Apply works by fetching the desired system configuration from a repository of your choosing (public or private), and then applying that configuration to the system on which Fetch Apply itself was installed.
+Fetch Apply works by fetching the desired system configuration from a repository of your choosing (public or private), and then applying that configuration to the system on which Fetch Apply was installed.
 
 #### Base Structure
 
@@ -105,7 +106,7 @@ In order for Fetch Apply to understand your server configuration, you must start
 └── variables
 ```
 
-Where `classes`, `initializers`, `modules`, and `roles` are directories and `variables` is a file.
+Where `classes`, `initializers`, `modules`, and `roles` are **directories** and `variables` is a **file**.
 
 To create this base structure quickly, feel free to run the following command inside of a designated folder:
 
@@ -113,9 +114,32 @@ To create this base structure quickly, feel free to run the following command in
 mkdir classes initializers modules roles && touch variables
 ```
 
+#### Special Files
+
+Special files are the magic that drives Fetch Apply... and they couldn't be any simpler! A special file is simply a file named for one of the three Fetch Apply components (`initializers`, `modules`, and `roles`), containing a list of items from within that component, to apply to the system within its scope.
+
+Let's break that down a bit, into some bite-sized points:
+
+- Special files may only have one of the following names:
+  - `initializers`
+  - `modules`
+  - `roles`
+- All three special files are required in the following directories:
+  - Class directories
+  - Host directories
+- Special files may be left blank if there is nothing to apply, otherwise they will list, one item per line, the items they wish to apply. For example, within a `modules` special file, you may write the following, to apply the `apt`, `scp`, and `ufw` modules:
+
+```
+apt
+scp
+ufw
+```
+
+- Special files will only affect servers that are part of same class or host directory that the special files are located in. This allows you to specify and apply different modules, initializers, and roles to different classes of hosts and individual hosts.
+
 #### Variables
 
-In addition to the global `variables` file, any directory containing code to be executed, must include a `variables` file within it. The specific directories requiring `variables` files are:
+In addition to the global `variables` file, any directory containing code to be executed, must include a `variables` file within it. The specific directories requiring a `variables` file are:
 
 1. The base directory
 2. Class directories
@@ -127,9 +151,13 @@ Fetch Apply will automatically scan those directories and load any applicable va
 - The `variables` file in the base directory is to be used for storing global variables.
 - The `variables` file in a class directory is to be used for storing variables that will only apply to systems that fit within that class.
 - The `variables` file in a host directory is to be used for storing variables that will only apply to that one, specific host.
-- The `variables` file found in a module directory is to be used for storing variables that will only apply to that one, specific module.
+- The `variables` file found in a module directory is to be used for storing variables that will only apply when that one, specific module is run.
 
-All applicable variables will be loaded, and be accessible for use within your code (without the need to "source" anything). That means that not only will you have access to the variables stored in the same directory as, say, a specific host, but you will also be able to reference that host's class's variables, as well as the global variables. In the case that two identical variables are declared, precedence is as follows (from winner to loser): modules -> hosts -> classes -> global
+All applicable variables will be loaded, and be accessible for use within your code (without the need to "source" anything). That means that not only will you have access to the variables stored in the same directory as, say, a specific host, but you will also be able to reference that host's class's variables, as well as the global variables.
+
+In the case that two identical variables are declared, precedence is as follows (from winner to loser):
+
+`modules > hosts > classes > global`
 
 #### Classes
 
@@ -148,16 +176,16 @@ For example, let's say that you have the following servers that you need to main
   - `database2`
   - `databasethree`
 
-These servers can be easily split-up into the following two categories:
+These servers can be easily split-up into the following two categories (classes):
 
 - `webserver`
 - `database`
 
-Servers within the `webserver` class will likely share similar maintenance tasks, installation procedures, etc. The same applies to the database servers. Therefore, instead of having to re-write code to set up each server, we can simply create two classes: `webserver` and `database`.
+Servers within the `webserver` class will likely share similar maintenance tasks, installation procedures, etc. The same applies to the database servers. Therefore, instead of having to re-write code to set up each individual server, we can simply create two classes: `webserver` and `database`. Any servers falling into the same class will share the same code.
 
 Because each webserver's hostname contains `webserver` somewhere within it, and each database server's hostname contains `database` somewhere within it, yet no webserver's hostname contains `database` within it and no database server's hostname contains `webserver` within it, Fetch Apply will automatically identify and associate each server with its correct class.
 
-Every class directory must contain the following files (although they may be left blank):
+As has been mentioned above, every class directory must contain the following files (although they may be left blank):
 
 - `initializers`
 - `modules`
@@ -172,7 +200,7 @@ A host directory must be contained within a class directory that applies to the 
 
 For the applicable host, all class files (except for class variables) will be ignored, and only files contained within the host directory will be executed.
 
-Every host directory must contain the following files (although they may be left blank):
+As has been mentioned above, every host directory must contain the following files (although they may be left blank):
 
 - `initializers`
 - `modules`
@@ -181,13 +209,13 @@ Every host directory must contain the following files (although they may be left
 
 #### Initializers
 
-Initializers are installation/set-up scripts that are designed to only be run once, when first configuring a system, and after that shall not be run again.
+Initializers are installation/set-up scripts that are designed to only be run once. Their goal is to "initialize" (configure) a system, and shall only be run once on that system.
 
-Initializers are created by adding a file with the desired commands to the `initializers` directory.
+Initializers are created by adding a file with the desired commands to be run, to the `initializers` directory. The name of the file you create will be the name of that initializer.
 
 #### Modules
 
-Modules are pieces of code that have a specific task or job. Modules are generally related to a single program, and are labeled with that program's name.
+Modules are pieces of code that have a specific task or job. Modules are generally related to a single program, and therefore are labeled with that program's name.
 
 To create a module, make a new directory within the `modules` directory. The title of this directory will be the module's name. Within the new directory you just made, create the following two, required files: `variables` and `apply`.
 
@@ -195,7 +223,7 @@ The `variables` file will contain any variables specific to the module. If no ex
 
 #### Roles
 
-A role is a group of modules that work towards completing a specific goal, or share some sort of relation with one another. Roles are created by editing a file within the `roles` directory, and listing, one module per line, the name of each module that makes-up that role. The name of the created role is the name of the file containing its grouped modules.
+A role is a group of modules that work towards completing a specific goal, or share some sort of relation with one another. Roles are made by creating a file within the `roles` directory, and listing, one module per line, the name of each module that makes-up that role. The name of the created role is the name of the file containing its grouped modules.
 
 ## Example Walk-Through
 
