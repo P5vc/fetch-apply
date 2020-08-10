@@ -116,18 +116,18 @@ mkdir classes initializers modules roles && touch variables
 
 #### Special Files
 
-Special files are the magic that drives Fetch Apply... and they couldn't be any simpler! A special file is simply a file named for one of the three Fetch Apply components (`initializers`, `modules`, and `roles`), containing a list of items from within that component, to apply to the system within its scope.
+Special Files are the magic that drives Fetch Apply... and they couldn't be any simpler! A special file is simply a file named for one of the three Fetch Apply components (`initializers`, `modules`, and `roles`), containing a list of items from within that component, to apply to the system within its scope.
 
 Let's break that down a bit, into some bite-sized points:
 
-- Special files may only have one of the following names:
+- Special Files may only have one of the following names:
   - `initializers`
   - `modules`
   - `roles`
-- All three special files are required in the following directories:
-  - Class directories
-  - Host directories
-- Special files may be left blank if there is nothing to apply, otherwise they will list, one item per line, the items they wish to apply. For example, within a `modules` special file, you may write the following, to apply the `apt`, `scp`, and `ufw` modules:
+- Special Files are required in the following circumstances:
+  - All three special files *must* be in every, single class directory
+  - Any host directory wishing to override a special file in the containing class directory must include that same type of special file. If no special file is found in a host directory, the class's corresponding special file will be used.
+- Special Files may be left blank if there is nothing to apply, otherwise they must list, one item per line, the items they wish to apply. For example, within a `modules` special file, you may write the following, to apply the `apt`, `scp`, and `ufw` modules:
 
 ```
 apt
@@ -135,15 +135,15 @@ scp
 ufw
 ```
 
-- Special files will only affect servers that are part of same class or host directory that the special files are located in. This allows you to specify and apply different modules, initializers, and roles to different classes of hosts and individual hosts.
+- Special Files will only affect servers that are part of same class or host directory that the special files are located in. This allows you to specify and apply different modules, initializers, and roles to different classes of hosts and individual hosts.
 
 #### Variables
 
-In addition to the global `variables` file, any directory containing code to be executed, must include a `variables` file within it. The specific directories requiring a `variables` file are:
+In addition to the global `variables` file, any directory containing code to be executed (with the exception of host directories, which may exclusively inherit variables from their class), must include a `variables` file within it. The specific directories requiring a `variables` file are:
 
 1. The base directory
 2. Class directories
-3. Host directories
+3. Host directories (only required if host-specific variables are needed)
 4. Module directories
 
 Fetch Apply will automatically scan those directories and load any applicable variables found within them.
@@ -185,7 +185,7 @@ Servers within the `webserver` class will likely share similar maintenance tasks
 
 Because each webserver's hostname contains `webserver` somewhere within it, and each database server's hostname contains `database` somewhere within it, yet no webserver's hostname contains `database` within it and no database server's hostname contains `webserver` within it, Fetch Apply will automatically identify and associate each server with its correct class.
 
-As has been mentioned above, every class directory must contain the following files (although they may be left blank):
+As has been mentioned above, every class directory **must** contain the following files (although they may be left blank):
 
 - `initializers`
 - `modules`
@@ -194,13 +194,13 @@ As has been mentioned above, every class directory must contain the following fi
 
 #### Hosts
 
-Host directories are contained within a class directory, and are used to override a class's `initializers`, `modules`, `roles`, and `variables`, for that specific host.
+Host directories are contained within a class directory, and are used to override a class's `initializers`, `modules`, `roles`, and `variables`, for a specific host.
 
 A host directory must be contained within a class directory that applies to the system it is targeting, and the host directory's name must be an exact match to the hostname of the target system.
 
-For the applicable host, all class files (except for class variables) will be ignored, and only files contained within the host directory will be executed.
+For the applicable host, all class Special Files (except for class variables) will be ignored, and only the Special Files contained within the host directory will be executed. However, in the event that a Special File is missing from the host directory, the class's Special File will be executed instead.
 
-As has been mentioned above, every host directory must contain the following files (although they may be left blank):
+As has been mentioned above, every host directory **may** contain the following files (and they may be left blank):
 
 - `initializers`
 - `modules`
@@ -215,7 +215,7 @@ Initializers are created by adding a file with the desired commands to be run, t
 
 #### Modules
 
-Modules are pieces of code that have a specific task or job. Modules are generally related to a single program, and therefore are labeled with that program's name.
+Modules are pieces of code that have a specific task or job. Modules are generally related to a single program, and therefore are usually labeled with that program's name.
 
 To create a module, make a new directory within the `modules` directory. The title of this directory will be the module's name. Within the new directory you just made, create the following two, required files: `variables` and `apply`.
 
@@ -247,15 +247,10 @@ Let's start piecing it all together, and get an overview of how everything works
 │       ├── roles
 │       ├── variables
 │       ├── webserver0
-│       │   ├── initializers
-│       │   ├── modules
-│       │   ├── roles
-│       │   └── variables
+│       │   └── initializers
 │       └── webserver1
 │           ├── initializers
-│           ├── modules
-│           ├── roles
-│           └── variables
+│           └── roles
 ├── initializers
 │   └── webserverInit
 ├── modules
@@ -273,7 +268,7 @@ In this simple setup, the global `variables` file is left blank. So far, we do n
 
 Under `classes`, we have created two two subdirectories, one that will apply to all of our webservers, and one that will apply to all of our database servers. However, unlike all of our identical database servers, two of our webservers are running separate web applications, and must be set up separately. Therefore we created the `webserver0` and `webserver1` directories, in order to apply custom configurations to them.
 
-We filled-in our class and host directories with the required, default files.
+We filled-in our class directories with the required, default files.
 
 Under the `modules` directory, we created an `apt` directory (and therefore an `apt` module). Within that directory are the required `apply` and `variable` files. Once again, we left the `variables` file blank. The `apply` file, however, contains some simple commands:
 
@@ -284,7 +279,7 @@ apt-get upgrade -y
 
 This is a fully-functioning module that, when run, will upgrade any existing packages on our system. Let's see how we can start assigning this module to run on certain systems.
 
-One way to do this is to create a roll. Under the `roles` directory, we create the `webserverMaintenance` file. Within this file, we add a line that says `apt`. This will cause any server assigned the `webserverMaintenance` role to run the `apt` module. We plan to add many more modules in the future that will be essential to maintaining our webserver, so we think that making it part of a single role will be easier. To apply this role to our webservers, we edit the `./classes/webserver/roles` file, and add a line containing the name of our new role: `webserverMaintenance`. We also add this line to the `roles` file within the `webserver0` host directory, as we would also like it to apply to that webserver.
+One way to do this is to create a role. Under the `roles` directory, we create the `webserverMaintenance` file. Within this file, we add a line that says `apt`. This will cause any server assigned the `webserverMaintenance` role to run the `apt` module. We plan to add many more modules in the future that will be essential to maintaining our webserver, so we think that making it part of a single role will be easier. To apply this role to our webservers, we edit the `./classes/webserver/roles` file, and add a line containing the name of our new role: `webserverMaintenance`. We do not want this role to apply to `webserver1`, however, so we create a blank `roles` file in the `webserver1` directory.
 
 To be honest, now that we think about it, `apt` would be a good module to apply to our database servers as well, however we don't have any other, future modules planned for our database servers. So, instead of creating an entire new role, we're going to add the module ad-hoc. To do this, we simply edit the `./classes/database/modules` file and add a line with the name of our module: `apt`. Now, this module will be applied to our database servers as well.
 
