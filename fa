@@ -5,6 +5,8 @@ set -E
 
 
 source /etc/fetchapply
+cd ${FA_ROOT}
+source mo
 
 
 host=$(hostname)
