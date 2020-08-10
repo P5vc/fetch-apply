@@ -227,6 +227,8 @@ A role is a group of modules that work towards completing a specific goal, or sh
 
 ## Example Walk-Through
 
+> Click [here](https://github.com/P5vc/ServerConfigurations "here") to see a live example, used to configure Priveasy's servers.
+
 There is a lot of detail above about the different aspects of the Fetch Apply framework. However, I can assure you that it is much less complicated than it seems. With less than 500 lines of code, there's no way we could make it as overwhelming as it may at first appear.
 
 Let's start piecing it all together, and get an overview of how everything works. Here's an example of a valid, minimal configuration:
