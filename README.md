@@ -32,7 +32,7 @@ sudo fa
 Learning how to use Fetch Apply is extremely easy, and can be boiled-down to two main steps:
 
 1. Learning the command
-2. Learning the framework structure
+2. Learning the framework
 
 ### Learning the Command
 
@@ -72,15 +72,45 @@ Commands:
   list-roles               List all roles
 ```
 
-### Learning the Framework Structure
+### Learning the Framework
 
 Fetch Apply works by fetching the desired system configuration from a repository of your choosing (public or private), and then applying that configuration to the system on which Fetch Apply itself was installed.
 
-In order for Fetch Apply to understand your server configuration, it must follow the standard structure, as outlined below:
+#### Base Structure
 
-- Variables (File)
-  - At the base of your repository, you must include a variables file. This file will be home to any global variables you wish to set, which will apply across all systems and configurations.
+In order for Fetch Apply to understand your server configuration, you must start with (and maintain) this standard structure:
 
-Some things to keep in mind:
+```
+.
+├── classes
+├── initializers
+├── modules
+├── roles
+└── variables
+```
 
-- While every folder and file mentioned above must be present, they do not necessarily have to be populated. It is perfectly fine to leave as many files and folders as you'd like, blank.
+Where `classes`, `initializers`, `modules`, and `roles` are directories and `variables` is a file.
+
+To create this base structure quickly, feel free to run the following command inside of a designated folder:
+
+```
+mkdir classes initializers modules roles && touch variables
+```
+
+#### Variables
+
+In addition to the global `variables` file, any directory containing code to be executed, must include a `variables` file within it. The specific directories requiring `variables` files are:
+
+1. The base directory
+2. Class directories
+3. Host directories
+4. Module directories
+
+Fetch Apply will automatically scan those directories and load any applicable variables found within them.
+
+- The `variables` file in the base directory is to be used for storing global variables.
+- The `variables` file in a class directory is to be used for storing variables that will only apply to systems that fit within that class.
+- The `variables` file in a host directory is to be used for storing variables that will only apply to that one, specific host.
+- The `variables` file found in a module directory is to be used for storing variables that will only apply to that one, specific module.
+
+All applicable variables will be loaded, and be accessible for use within your code (without the need to "source" anything). That means that not only will you have access to the variables stored in the same directory as, say, a specific host, but you will also be able to reference that host's class's variables, as well as the global variables. In the case that two identical variables are declared, precedence is as follows (from winner to loser): modules -> hosts -> classes -> global
