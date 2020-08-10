@@ -227,11 +227,9 @@ A role is a group of modules that work towards completing a specific goal, or sh
 
 ## Example Walk-Through
 
-There is a lot of detail above about the different aspects of the Fetch Apply framework. However, I can assure you that it is much less complicated than it seems. With less than 500 lines of code, there's no way we could make it as overwhelming as it may at first seem to you.
+There is a lot of detail above about the different aspects of the Fetch Apply framework. However, I can assure you that it is much less complicated than it seems. With less than 500 lines of code, there's no way we could make it as overwhelming as it may at first appear.
 
-Let's start piecing it all together, and get an overview of how everything works together.
-
-First let's start by looking at an example of a completed configuration:
+Let's start piecing it all together, and get an overview of how everything works. Here's an example of a valid, minimal configuration:
 
 ```
 .
@@ -269,26 +267,26 @@ First let's start by looking at an example of a completed configuration:
 
 As you can see, we have the standard `classes`, `initializers`, `modules`, and `roles` directories. We also have a global `variables` file.
 
-In this simple setup, the global `variables` file is left blank. So far, we do not have any shared variables amongst all hosts.
+In this simple setup, the global `variables` file is left blank. So far, we do not have any variables to share amongst all the hosts, and that is perfectly fine.
 
 Under `classes`, we have created two two subdirectories, one that will apply to all of our webservers, and one that will apply to all of our database servers. However, unlike all of our identical database servers, two of our webservers are running separate web applications, and must be set up separately. Therefore we created the `webserver0` and `webserver1` directories, in order to apply custom configurations to them.
 
-We filled in our class and host directories with the required, default files.
+We filled-in our class and host directories with the required, default files.
 
-Under the `modules` directory, we created an `apt` directory. Within that directory are the required `apply` and `variable` files. Once again, we left the `variables` file blank. The `apply` file, however, contains some simple commands:
+Under the `modules` directory, we created an `apt` directory (and therefore an `apt` module). Within that directory are the required `apply` and `variable` files. Once again, we left the `variables` file blank. The `apply` file, however, contains some simple commands:
 
 ```
 apt-get update
 apt-get upgrade -y
 ```
 
-This fully-functioning module, when run, will upgrade any existing packages on our system.
+This is a fully-functioning module that, when run, will upgrade any existing packages on our system. Let's see how we can start assigning this module to run on certain systems.
 
-Now that our base has been set up, let's start populating all of these blank files.
+One way to do this is to create a roll. Under the `roles` directory, we create the `webserverMaintenance` file. Within this file, we add a line that says `apt`. This will cause any server assigned the `webserverMaintenance` role to run the `apt` module. We plan to add many more modules in the future that will be essential to maintaining our webserver, so we think that making it part of a single role will be easier. To apply this role to our webservers, we edit the `./classes/webserver/roles` file, and add a line containing the name of our new role: `webserverMaintenance`. We also add this line to the `roles` file within the `webserver0` host directory, as we would also like it to apply to that webserver.
 
-First, we create an initializer, to set up our webservers. Under the `initializers` directory we create the `webserverInit`, and fill it with some commands that we use to set up and install the correct applications onto our webservers. Then we edit the `./classes/webserver/initializers` file, and add a line with `webserverInit` in it. Now, all of our webservers will automatically run our initialization script, the first time that Fetch Apply is run on them... well, all except for `webserver0` and `webserver1`. They have custom files, which are currently blank... so nothing will be done on those servers.
+To be honest, now that we think about it, `apt` would be a good module to apply to our database servers as well, however we don't have any other, future modules planned for our database servers. So, instead of creating an entire new role, we're going to add the module ad-hoc. To do this, we simply edit the `./classes/database/modules` file and add a line with the name of our module: `apt`. Now, this module will be applied to our database servers as well.
 
-Next, we create a roll. Under the `roles` directory, we create the `webserverMaintenance` file. Within this file, we add a line that says `apt`. This will mean that any server assigned this roll will run the `apt` module. We plan to add many more modules in the future that will be essential to maintaining our webserver, so we think that making it part of a single roll will be easier. To apply this roll to our webservers, we edit the `./classes/webserver/roles` file, and add a line containing the name of our new role: `webserverMaintenance`. We also add this line to the `roles` file within the `webserver0` host directory, as we would also like it to apply to that webserver. To be honest, now that we think about it, `apt` would be a good module to apply to our database servers as well, however we don't have any other, future modules planned, for us to add to our database servers. So, instead of creating a new role, we're going to add the module ad-hoc. To do this, we simply edit the `./classes/database/modules` file and add a line with the name of our module: `apt`. Now, this module will be applied to our database servers as well.
+Finally, let's create an initializer, to set up our webservers. Under the `initializers` directory we create the `webserverInit` file, and fill it with some commands that we use to set up and install the correct applications onto our webservers. Then we edit the `./classes/webserver/initializers` file, and add a line with `webserverInit` in it. Now, all of our webservers will automatically apply our initialization script, the first time that Fetch Apply is run on them... well, all except for `webserver0` and `webserver1`. They have custom files, which are currently blank... so nothing will be done on those servers.
 
 #### Final Thoughts
 
