@@ -33,7 +33,7 @@ function install()
 
 	echo -e "\n\n${BLUE}Where would you like to create a log file?\n${CYAN}Log file (/var/log/fetchapply.log):${NO_COLOR}"
 	read LOG_FILE_PATH
-	if [ -z "LOG_FILE_PATH" ]
+	if [ -z "$LOG_FILE_PATH" ]
 	then
 		LOG_FILE_PATH="/var/log/fetchapply.log"
 	fi
