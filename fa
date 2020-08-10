@@ -364,7 +364,7 @@ then
 	then
 		if [ "$force" == "No" ]
 		then
-			log Warning "Pause file found. This means that a hold has been manually placed\non execution. You may remove this pause file by\nrunning 'fa resume'.\nExiting..."
+			log Warning "Pause file found. This means that a hold has been manually\nplaced on execution. You may remove this pause file by\nrunning 'fa resume'.\nExiting..."
 			exit 0
 		fi
 	fi
