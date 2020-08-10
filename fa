@@ -35,26 +35,26 @@ function log
 
 	color=""
 
-	if [ "$1"=="Error" ]
+	if [ "$1" == "Error" ]
 	then
 		color="$RED"
-	elif [ "$1"=="Warning" ]
+	elif [ "$1" == "Warning" ]
 	then
 		color="$YELLOW"
-	elif [ "$1"=="Info" ]
+	elif [ "$1" == "Info" ]
 	then
 		color="$CYAN"
-	elif [ "$1"=="Success" ]
+	elif [ "$1" == "Success" ]
 	then
 		color="$GREEN"
 	fi
 
-	if [ "$quiet"=="No" ]
+	if [ "$quiet" == "No" ]
 	then
 		echo -e "${color}${2}${NO_COLOR}"
 		echo -e "$2" >> $LOG_FILE_PATH
 	else
-		if [ "$1"=="Error" ]
+		if [ "$1" == "Error" ]
 		then
 			echo -e "$2" >> $LOG_FILE_PATH
 		fi
@@ -107,15 +107,16 @@ EOF
 
 function gitFetch
 {
-	if [ "$fetch"=="Yes" ]
+	if [ "$fetch" == "Yes" ]
 	then
-		if [ -z $(git -C "${FA_ROOT}/operations status --porcelain") ]
+		if [ -z $(git -C ${FA_ROOT}/operations status --porcelain) ]
 		then
 			timeout 300 git -C ${FA_ROOT}/operations fetch > /dev/null
 		else
 			log Error "Operations checkout is dirty."
 			log Info "Run with '--no-fetch' to bypass this check."
 			exit 1
+		fi
 	else
 		log Info "Skipping fetch..."
 	fi
@@ -153,7 +154,7 @@ function loadVariables
 {
 	source ${FA_ROOT}/operations/variables
 	source ${directory}/variables
-	if [ "$specificHostDirectory"=="Yes" ]
+	if [ "$specificHostDirectory" == "Yes" ]
 	then
 		source ${directory}/../variables
 	fi
@@ -167,7 +168,7 @@ function initializers
 	cat ${directory}/initializers | while read line
 	do initCompleted="No"
 		cat ${FA_ROOT}/status/completedInits | while read otherLine
-		do if [ "$otherLine"=="$line" ]
+		do if [ "$otherLine" == "$line" ]
 			then
 				log Info "The '${line}' initializer has already been completed, and will be skipped..."
 				initCompleted="Yes"
@@ -175,7 +176,7 @@ function initializers
 			fi
 		done
 
-		if [ "$initCompleted"=="No" ]
+		if [ "$initCompleted" == "No" ]
 		then
 			log Info "Executing the '${line}' initializer..."
 			echo "$line" >> ${FA_ROOT}/status/completedInits
@@ -249,19 +250,19 @@ function modules
 # Parse command-line arguments:
 for argument in "$@"
 do
-	if [ "$argument"=="--help" ]
+	if [ "$argument" == "--help" ]
 	then
 		usage
-	elif [ "$argument"=="--no-fetch" ]
+	elif [ "$argument" == "--no-fetch" ]
 	then
 		fetch="No"
-	elif [ "$argument"=="--force" ]
+	elif [ "$argument" == "--force" ]
 	then
 		force="Yes"
-	elif [ "$argument"=="--quieter" ]
+	elif [ "$argument" == "--quieter" ]
 	then
 		quiet="Yes"
-	elif [ "$argument"=="fetch" ]
+	elif [ "$argument" == "fetch" ]
 	then
 		if [ -z "$cmd" ]
 		then
@@ -269,7 +270,7 @@ do
 		else
 			log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
 		fi
-	elif [ "$argument"=="recover" ]
+	elif [ "$argument" == "recover" ]
 	then
 		if [ -z "$cmd" ]
 		then
@@ -277,7 +278,7 @@ do
 		else
 			log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
 		fi
-	elif [ "$argument"=="pause" ]
+	elif [ "$argument" == "pause" ]
 	then
 		if [ -z "$cmd" ]
 		then
@@ -285,7 +286,7 @@ do
 		else
 			log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
 		fi
-	elif [ "$argument"=="resume" ]
+	elif [ "$argument" == "resume" ]
 	then
 		if [ -z "$cmd" ]
 		then
@@ -293,7 +294,7 @@ do
 		else
 			log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
 		fi
-	elif [ "$argument"=="list-classes" ]
+	elif [ "$argument" == "list-classes" ]
 	then
 		if [ -z "$cmd" ]
 		then
@@ -301,7 +302,7 @@ do
 		else
 			log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
 		fi
-	elif [ "$argument"=="list-modules" ]
+	elif [ "$argument" == "list-modules" ]
 	then
 		if [ -z "$cmd" ]
 		then
@@ -309,7 +310,7 @@ do
 		else
 			log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
 		fi
-	elif [ "$argument"=="list-roles" ]
+	elif [ "$argument" == "list-roles" ]
 	then
 		if [ -z "$cmd" ]
 		then
@@ -323,28 +324,28 @@ do
 done
 
 
-if [ "$cmd"=="fetch" ]
+if [ "$cmd" == "fetch" ]
 then
 	gitFetch
-elif [ "$cmd"=="recover" ]
+elif [ "$cmd" == "recover" ]
 then
 	rm $lockFile
-elif [ "$cmd"=="pause" ]
+elif [ "$cmd" == "pause" ]
 then
 	touch $pauseFile
-elif [ "$cmd"=="resume" ]
+elif [ "$cmd" == "resume" ]
 then
 	rm $pauseFile
-elif [ "$cmd"=="list-classes" ]
+elif [ "$cmd" == "list-classes" ]
 then
 	ls -1 "${FA_ROOT}/classes"
-elif [ "$cmd"=="list-modules" ]
+elif [ "$cmd" == "list-modules" ]
 then
 	ls -1 "${FA_ROOT}/modules"
-elif [ "$cmd"=="list-roles" ]
+elif [ "$cmd" == "list-roles" ]
 then
 	ls -1 "${FA_ROOT}/roles"
-elif [ "$cmd"=="" ]
+elif [ "$cmd" == "" ]
 then
 	if [ -e "$lockFile" ]
 	then
