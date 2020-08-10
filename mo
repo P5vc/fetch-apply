@@ -1094,7 +1094,7 @@ moUsage() {
 
 
 # Save the original command's path for usage later
-MO_ORIGINAL_COMMAND="$(cd "${BASH_SOURCE[0]%/*}" || exit 1; pwd)/${BASH_SOURCE[0]##*/}"
+#MO_ORIGINAL_COMMAND="$(cd "${BASH_SOURCE[0]%/*}" || exit 1; pwd)/${BASH_SOURCE[0]##*/}"
 MO_VERSION="2.2.0"
 
 # If sourced, load all functions.
