@@ -18,7 +18,7 @@ function install()
 
 	echo -e "\n\n${BLUE}Where would you like to install Fetch Apply?\n${CYAN}Installation Path (/var/lib):\t${NO_COLOR}"
 	read INSTALLATION_PATH
-	if [ INSTALLATION_PATH == "" ]
+	if [ INSTALLATION_PATH=="" ]
 	then
 		INSTALLATION_PATH="/var/lib"
 	fi
@@ -31,26 +31,26 @@ function install()
 
 	echo -e "\n\n${BLUE}Where would you like to create a log file?\n${CYAN}Log file (/var/log/fetchapply.log):\t${NO_COLOR}"
 	read LOG_FILE_PATH
-	if [ LOG_FILE_PATH == "" ]
+	if [ LOG_FILE_PATH=="" ]
 	then
 		LOG_FILE_PATH="/var/log/fetchapply.log"
 	fi
 
 	echo -e "\n\n${BLUE}What is your operations git URL?\n${CYAN}URL (https://github.com/P5vc/ServerConfigurations.git):\t${NO_COLOR}"
 	read OPERATIONS_GIT_URL
-	if [ OPERATIONS_GIT_URL == "" ]
+	if [ OPERATIONS_GIT_URL=="" ]
 	then
 		OPERATIONS_GIT_URL="https://github.com/P5vc/ServerConfigurations.git"
 	fi
 
 	echo -e "\n\n${BLUE}What is the desired hostname for this server?\n${CYAN}Hostname (server):\t${NO_COLOR}"
 	read SERVER_HOSTNAME
-	if [ SERVER_HOSTNAME == "" ]
+	if [ SERVER_HOSTNAME=="" ]
 	then
 		SERVER_HOSTNAME="server"
 	fi
 
-	if [ "$(/usr/bin/which git)" == "" ]
+	if [ "$(/usr/bin/which git)"=="" ]
 	then
 		echo -e "\n\n${RED}Error! Git was not found. Attempting to install...${PURPLE}"
 		apt-get update
