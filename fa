@@ -109,7 +109,7 @@ function gitFetch
 {
 	if [ "$fetch" == "Yes" ]
 	then
-		if [ -z $(git -C ${FA_ROOT}/operations status --porcelain) ]
+		if [ -z "$(git -C ${FA_ROOT}/operations status --porcelain)" ]
 		then
 			timeout 300 git -C ${FA_ROOT}/operations fetch > /dev/null
 		else
@@ -125,12 +125,12 @@ function gitFetch
 
 function identifyDirectory
 {
-	ls -1 ${FA_ROOT}/operations/classes | while read line
-	do if [ -n $(echo "$host" | grep "$line") ]
+	while read line
+	do if [ -n "$(echo "$host" | grep "$line")" ]
 			then
 				directory="$line"
 			fi
-	done
+	done < <(ls -1 ${FA_ROOT}/operations/classes)
 
 	if [ -z "$directory" ]
 	then
@@ -179,16 +179,16 @@ function initializers
 		fi
 	fi
 
-	cat ${initDirectory}/initializers | while read line
+	while read line
 	do initCompleted="No"
-		cat ${FA_ROOT}/status/completedInits | while read otherLine
+		while read otherLine
 		do if [ "$otherLine" == "$line" ]
 			then
 				log Info "The '${line}' initializer has already been completed, and will be skipped..."
 				initCompleted="Yes"
 				break
 			fi
-		done
+		done < <(cat ${FA_ROOT}/status/completedInits)
 
 		if [ "$initCompleted" == "No" ]
 		then
@@ -205,7 +205,7 @@ function initializers
 
 			log Success "Initializer (${line}) successfully executed..."
 		fi
-	done
+	done < <(cat ${initDirectory}/initializers)
 }
 
 
@@ -221,7 +221,7 @@ function roles
 		fi
 	fi
 
-	cat ${roleDirectory}/roles | while read line
+	while read line
 	do log Info "Applying role '${line}'..."
 		if [ ! -e ${FA_ROOT}/operations/roles/${line} ]
 		then
@@ -229,7 +229,7 @@ function roles
 			exit 1
 		fi
 
-		cat ${FA_ROOT}/operations/roles/${line} | while read otherLine
+		while read otherLine
 		do moduleDirectory="${FA_ROOT}/operations/modules/${otherLine}"
 			if [ ! -e ${moduleDirectory} ]
 			then
@@ -245,8 +245,8 @@ function roles
 			log Success "Module '${otherLine}' successfully applied..."
 
 			cd ${FA_ROOT}
-		done
-	done
+		done < <(cat ${FA_ROOT}/operations/roles/${line})
+	done < <(cat ${roleDirectory}/roles)
 }
 
 
@@ -262,7 +262,7 @@ function modules
 		fi
 	fi
 
-	cat ${modDirectory}/modules | while read line
+	while read line
 	do moduleDirectory="${FA_ROOT}/operations/modules/${line}"
 		if [ ! -e ${moduleDirectory} ]
 		then
@@ -278,7 +278,7 @@ function modules
 		log Success "Module '${line}' successfully applied..."
 
 		cd ${FA_ROOT}
-	done
+	done < <(cat ${modDirectory}/modules)
 }
 
 
