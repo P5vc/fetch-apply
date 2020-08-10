@@ -153,10 +153,14 @@ function identifyDirectory
 function loadVariables
 {
 	source ${FA_ROOT}/operations/variables
-	source ${directory}/variables
 	if [ "$specificHostDirectory" == "Yes" ]
 	then
 		source ${directory}/../variables
+	fi
+
+	if [ -e "${directory}/variables" ]
+	then
+		source ${directory}/variables
 	fi
 
 	log Success "Host-specific variables loaded..."
@@ -165,7 +169,17 @@ function loadVariables
 
 function initializers
 {
-	cat ${directory}/initializers | while read line
+	if [ "$specificHostDirectory" == "Yes" ]
+	then
+		if [ -e "${directory}/initializers" ]
+		then
+			initDirectory="${directory}"
+		else
+			initDirectory="${directory}/.."
+		fi
+	fi
+
+	cat ${initDirectory}/initializers | while read line
 	do initCompleted="No"
 		cat ${FA_ROOT}/status/completedInits | while read otherLine
 		do if [ "$otherLine" == "$line" ]
@@ -197,7 +211,17 @@ function initializers
 
 function roles
 {
-	cat ${directory}/roles | while read line
+	if [ "$specificHostDirectory" == "Yes" ]
+	then
+		if [ -e "${directory}/roles" ]
+		then
+			roleDirectory="${directory}"
+		else
+			roleDirectory="${directory}/.."
+		fi
+	fi
+
+	cat ${roleDirectory}/roles | while read line
 	do log Info "Applying role '${line}'..."
 		if [ ! -e ${FA_ROOT}/operations/roles/${line} ]
 		then
@@ -216,6 +240,7 @@ function roles
 			cd $moduleDirectory
 
 			log Info "Applying module '${otherLine}'..."
+			source variables
 			. apply 2>&1
 			log Success "Module '${otherLine}' successfully applied..."
 
@@ -227,7 +252,17 @@ function roles
 
 function modules
 {
-	cat ${directory}/modules | while read line
+	if [ "$specificHostDirectory" == "Yes" ]
+	then
+		if [ -e "${directory}/modules" ]
+		then
+			modDirectory="${directory}"
+		else
+			modDirectory="${directory}/.."
+		fi
+	fi
+
+	cat ${modDirectory}/modules | while read line
 	do moduleDirectory="${FA_ROOT}/operations/modules/${line}"
 		if [ ! -e ${moduleDirectory} ]
 		then
@@ -238,6 +273,7 @@ function modules
 		cd $moduleDirectory
 
 		log Info "Applying module '${line}'..."
+		source variables
 		. apply 2>&1
 		log Success "Module '${line}' successfully applied..."
 
