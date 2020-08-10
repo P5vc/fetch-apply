@@ -20,7 +20,7 @@ function install()
 
 	echo -e "\n\n${BLUE}Where would you like to install Fetch Apply?\n${CYAN}Installation Path (/var/lib):${NO_COLOR}"
 	read INSTALLATION_PATH
-	if [ -z "INSTALLATION_PATH" ]
+	if [ -z "$INSTALLATION_PATH" ]
 	then
 		INSTALLATION_PATH="/var/lib"
 	fi
@@ -40,7 +40,7 @@ function install()
 
 	echo -e "\n\n${BLUE}What is your operations git URL?\n${CYAN}URL (https://github.com/P5vc/ServerConfigurations.git):${NO_COLOR}"
 	read OPERATIONS_GIT_URL
-	if [ -z "OPERATIONS_GIT_URL" ]
+	if [ -z "$OPERATIONS_GIT_URL" ]
 	then
 		OPERATIONS_GIT_URL="https://github.com/P5vc/ServerConfigurations.git"
 	fi
@@ -59,7 +59,7 @@ function install()
 		CRONTAB_ENTRY=$"THEIR_CRONTAB_ENTRY"
 	fi
 
-	if [ "$(/usr/bin/which git)"=="" ]
+	if [ -z "$(/usr/bin/which git)" ]
 	then
 		echo -e "\n\n${RED}Error. Git was not found. Attempting to install...${PURPLE}"
 		apt-get update
