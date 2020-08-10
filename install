@@ -13,46 +13,55 @@ NO_COLOR="\033[0m"
 
 function install()
 {
-	PA_GIT_URL="https://github.com/P5vc/FetchApply.git"
-	CRONTAB_ENTRY="25 11 * * *"
+	FA_GIT_URL="https://github.com/P5vc/FetchApply.git"
+	CRONTAB_ENTRY="$(( RANDOM % 60 )) $(( RANDOM % 24 )) * * *"
+
+	echo -e "Welcome to the Fetch Apply installation script.\n\nPlease answer the following questions about how you would like to\ninstall Fetch Apply. If you are not sure what to put, press enter,\nand the default value in parentheses will be applied."
 
 	echo -e "\n\n${BLUE}Where would you like to install Fetch Apply?\n${CYAN}Installation Path (/var/lib):\t${NO_COLOR}"
 	read INSTALLATION_PATH
-	if [ INSTALLATION_PATH=="" ]
+	if [ -z "INSTALLATION_PATH" ]
 	then
 		INSTALLATION_PATH="/var/lib"
 	fi
 
 	if [ -e "${INSTALLATION_PATH}/fetchapply" ]
 	then
-		echo -e "${RED}Error! An existing Fetch Apply installation was found. Exiting...${NO_COLOR}"
+		echo -e "${RED}Error. An existing Fetch Apply installation was found. Exiting...${NO_COLOR}"
 		exit 1
 	fi
 
 	echo -e "\n\n${BLUE}Where would you like to create a log file?\n${CYAN}Log file (/var/log/fetchapply.log):\t${NO_COLOR}"
 	read LOG_FILE_PATH
-	if [ LOG_FILE_PATH=="" ]
+	if [ -z "LOG_FILE_PATH" ]
 	then
 		LOG_FILE_PATH="/var/log/fetchapply.log"
 	fi
 
 	echo -e "\n\n${BLUE}What is your operations git URL?\n${CYAN}URL (https://github.com/P5vc/ServerConfigurations.git):\t${NO_COLOR}"
 	read OPERATIONS_GIT_URL
-	if [ OPERATIONS_GIT_URL=="" ]
+	if [ -z "OPERATIONS_GIT_URL" ]
 	then
 		OPERATIONS_GIT_URL="https://github.com/P5vc/ServerConfigurations.git"
 	fi
 
 	echo -e "\n\n${BLUE}What is the desired hostname for this server?\n${CYAN}Hostname (server):\t${NO_COLOR}"
 	read SERVER_HOSTNAME
-	if [ SERVER_HOSTNAME=="" ]
+	if [ -z "$SERVER_HOSTNAME" ]
 	then
 		SERVER_HOSTNAME="server"
 	fi
 
+	echo -e "\n\n${BLUE}What is the desired Fetch Apply run frequency? The default is once every 24 hours.\n${CYAN}Run frequency in crontab syntax (${CRONTAB_ENTRY}):\t${NO_COLOR}"
+	read THEIR_CRONTAB_ENTRY
+	if [ -n "$THEIR_CRONTAB_ENTRY" ]
+	then
+		CRONTAB_ENTRY=$"THEIR_CRONTAB_ENTRY"
+	fi
+
 	if [ "$(/usr/bin/which git)"=="" ]
 	then
-		echo -e "\n\n${RED}Error! Git was not found. Attempting to install...${PURPLE}"
+		echo -e "\n\n${RED}Error. Git was not found. Attempting to install...${PURPLE}"
 		apt-get update
 		apt-get install git -y
 		echo -e "${NO_COLOR}"
@@ -65,7 +74,7 @@ function install()
 	hostnamectl set-hostname $SERVER_HOSTNAME
 
 	mkdir -p ${INSTALLATION_PATH}/fetchapply
-	git clone $PA_GIT_URL ${INSTALLATION_PATH}/fetchapply
+	git clone $FA_GIT_URL ${INSTALLATION_PATH}/fetchapply
 	ln -sf ${INSTALLATION_PATH}/fetchapply/fa /usr/bin/fa
 
 	git clone OPERATIONS_GIT_URL ${INSTALLATION_PATH}/fetchapply/operations
@@ -77,7 +86,7 @@ function install()
 	echo "$(cat /etc/crontab | grep -v ${INSTALLATION_PATH}/fetchapply)" > /etc/crontab
 	echo "${CRONTAB_ENTRY} root ${INSTALLATION_PATH}/fetchapply/fa 2>&1" >> /etc/crontab
 
-	echo -e "$\n\n{GREEN}Installation complete!"
+	echo -e "$\n\n{GREEN}Installation complete."
 }
 
 install
