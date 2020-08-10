@@ -1,0 +1,387 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+set -E
+
+
+source /etc/fetchapply
+
+
+host=$(hostname)
+directory=""
+specificHostDirectory="No"
+
+pauseFile="${FA_ROOT}/pause"
+lockFile="${FA_ROOT}/lock"
+
+fetch="Yes"
+force="No"
+quiet="No"
+
+cmd=""
+
+initCompleted="No"
+
+
+function log
+{
+	RED="\033[0;31m"
+	YELLOW="\033[0;33m"
+	CYAN="\033[0;36m"
+	GREEN="\033[0;32m"
+	NO_COLOR="\033[0m"
+
+	color=""
+
+	if [ "$1"=="Error" ]
+	then
+		color="$RED"
+	elif [ "$1"=="Warning" ]
+	then
+		color="$YELLOW"
+	elif [ "$1"=="Info" ]
+	then
+		color="$CYAN"
+	elif [ "$1"=="Success" ]
+	then
+		color="$GREEN"
+	fi
+
+	if [ "$quiet"=="No" ]
+	then
+		echo -e "${color}${2}${NO_COLOR}"
+		echo -e "$2" >> $LOG_FILE_PATH
+	else
+		if [ "$1"=="Error" ]
+		then
+			echo -e "$2" >> $LOG_FILE_PATH
+		fi
+	fi
+}
+
+
+function handleError
+{
+	local exitCode="$?"
+	local failedCommand="${BASH_COMMAND:-unknown}"
+	log Error "The command '${failedCommand} exited with exit code ${exitCode}."
+}
+
+
+function handleExit
+{
+	if [ "$?" != "0" ]
+	then
+		log Error "Failed.\nExiting..."
+	fi
+}
+
+
+function usage
+{
+cat <<EOF
+fa - transparent server configuration and management
+
+Usage:
+  fa [options] [command]
+
+Options:
+  --help                   Show this help message
+  --no-fetch               Don't fetch the inventory before running the command
+  --force                  Run even if a pause or run lock is set
+  --quieter                Suppress log messages
+
+Commands:
+  fetch                    Update local database by fetching from upstream
+  recover                  Reset run lock file after a failure
+  pause                    Set the pause lock to avoid periodic runs while debugging
+  resume                   Resume periodic runs after a pause
+  list-classes             List all classes
+  list-modules             List all modules
+  list-roles               List all roles
+EOF
+}
+
+
+function gitFetch
+{
+	if [ "$fetch"=="Yes" ]
+	then
+		if [ -z $(git -C "${FA_ROOT}/operations status --porcelain") ]
+		then
+			timeout 300 git -C ${FA_ROOT}/operations fetch > /dev/null
+		else
+			log Error "Operations checkout is dirty."
+			log Info "Run with '--no-fetch' to bypass this check."
+			exit 1
+	else
+		log Info "Skipping fetch..."
+	fi
+}
+
+
+function identifyDirectory
+{
+	ls -1 ${FA_ROOT}/operations/classes | while read line
+	do if [ -n $(echo "$host" | grep "$line") ]
+			then
+				directory="$line"
+			fi
+	done
+
+	if [ -z "$directory" ]
+	then
+		log Warning "No instructions found for this server.\nExiting..."
+		exit 0
+	else
+		log Success "A match was found with the class '${directory}'..."
+		directory="${FA_ROOT}/operations/classes/${directory}"
+	fi
+
+	if [ -e "${directory}/${host}" ]
+	then
+		log Success "A specific host directory was identified..."
+		directory="${directory}/${host}"
+		specificHostDirectory="Yes"
+	fi
+}
+
+
+function loadVariables
+{
+	source ${FA_ROOT}/operations/variables
+	source ${directory}/variables
+	if [ "$specificHostDirectory"=="Yes" ]
+	then
+		source ${directory}/../variables
+	fi
+
+	log Success "Host-specific variables loaded..."
+}
+
+
+function initializers
+{
+	cat ${directory}/initializers | while read line
+	do initCompleted="No"
+		cat ${FA_ROOT}/status/completedInits | while read otherLine
+		do if [ "$otherLine"=="$line" ]
+			then
+				log Info "The '${line}' initializer has already been completed, and will be skipped..."
+				initCompleted="Yes"
+				break
+			fi
+		done
+
+		if [ "$initCompleted"=="No" ]
+		then
+			log Info "Executing the '${line}' initializer..."
+			echo "$line" >> ${FA_ROOT}/status/completedInits
+
+			if [ -e "${FA_ROOT}/operations/initializers/${line}" ]
+			then
+				. ${FA_ROOT}/operations/initializers/${line} 2>&1
+			else
+				log Error "The initializer '${line}' could not be found.\nExiting..."
+				exit 1
+			fi
+
+			log Success "Initializer (${line}) successfully executed..."
+		fi
+	done
+}
+
+
+function roles
+{
+	cat ${directory}/roles | while read line
+	do log Info "Applying role '${line}'..."
+		if [ ! -e ${FA_ROOT}/operations/roles/${line} ]
+		then
+			log Error "The role '${line}' could not be found.\nExiting..."
+			exit 1
+		fi
+
+		cat ${FA_ROOT}/operations/roles/${line} | while read otherLine
+		do moduleDirectory="${FA_ROOT}/operations/modules/${otherLine}"
+			if [ ! -e ${moduleDirectory} ]
+			then
+				log Error "The module '${otherLine}' could not be found.\nExiting..."
+				exit 1
+			fi
+
+			cd $moduleDirectory
+
+			log Info "Applying module '${otherLine}'..."
+			. apply 2>&1
+			log Success "Module '${otherLine}' successfully applied..."
+
+			cd ${FA_ROOT}
+		done
+	done
+}
+
+
+function modules
+{
+	cat ${directory}/modules | while read line
+	do moduleDirectory="${FA_ROOT}/operations/modules/${line}"
+		if [ ! -e ${moduleDirectory} ]
+		then
+			log Error "The module '${line}' could not be found.\nExiting..."
+			exit 1
+		fi
+
+		cd $moduleDirectory
+
+		log Info "Applying module '${line}'..."
+		. apply 2>&1
+		log Success "Module '${line}' successfully applied..."
+
+		cd ${FA_ROOT}
+	done
+}
+
+
+
+# Parse command-line arguments:
+for argument in "$@"
+do
+	if [ "$argument"=="--help" ]
+	then
+		usage
+	elif [ "$argument"=="--no-fetch" ]
+	then
+		fetch="No"
+	elif [ "$argument"=="--force" ]
+	then
+		force="Yes"
+	elif [ "$argument"=="--quieter" ]
+	then
+		quiet="Yes"
+	elif [ "$argument"=="fetch" ]
+	then
+		if [ -z "$cmd" ]
+		then
+			cmd="$argument"
+		else
+			log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
+		fi
+	elif [ "$argument"=="recover" ]
+	then
+		if [ -z "$cmd" ]
+		then
+			cmd="$argument"
+		else
+			log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
+		fi
+	elif [ "$argument"=="pause" ]
+	then
+		if [ -z "$cmd" ]
+		then
+			cmd="$argument"
+		else
+			log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
+		fi
+	elif [ "$argument"=="resume" ]
+	then
+		if [ -z "$cmd" ]
+		then
+			cmd="$argument"
+		else
+			log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
+		fi
+	elif [ "$argument"=="list-classes" ]
+	then
+		if [ -z "$cmd" ]
+		then
+			cmd="$argument"
+		else
+			log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
+		fi
+	elif [ "$argument"=="list-modules" ]
+	then
+		if [ -z "$cmd" ]
+		then
+			cmd="$argument"
+		else
+			log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
+		fi
+	elif [ "$argument"=="list-roles" ]
+	then
+		if [ -z "$cmd" ]
+		then
+			cmd="$argument"
+		else
+			log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
+		fi
+	else
+		log Error "'${argument}' is not a recognized option or command.\nRun 'fa --help' for proper usage instructions."
+	fi
+done
+
+
+if [ "$cmd"=="fetch" ]
+then
+	gitFetch
+elif [ "$cmd"=="recover" ]
+then
+	rm $lockFile
+elif [ "$cmd"=="pause" ]
+then
+	touch $pauseFile
+elif [ "$cmd"=="resume" ]
+then
+	rm $pauseFile
+elif [ "$cmd"=="list-classes" ]
+then
+	ls -1 "${FA_ROOT}/classes"
+elif [ "$cmd"=="list-modules" ]
+then
+	ls -1 "${FA_ROOT}/modules"
+elif [ "$cmd"=="list-roles" ]
+then
+	ls -1 "${FA_ROOT}/roles"
+elif [ "$cmd"=="" ]
+then
+	if [ -e "$lockFile" ]
+	then
+		log Warning "Lock file found. This means that an error occurred during\na previous execution. You may remove this lock file by\nrunning 'fa recover'.\nExiting..."
+		exit 1
+	fi
+
+	if [ -e "$pauseFile" ]
+	then
+		log Warning "Pause file found. This means that a hold has been manually placed\non execution. You may remove this pause file by\nrunning 'fa resume'.\nExiting..."
+		exit 0
+	fi
+
+
+	cd ${FA_ROOT}
+
+	touch $lockFile
+
+	gitFetch
+
+	trap handleError ERR
+	trap handleExit EXIT
+
+	log Info "Detecting proper directory..."
+	identifyDirectory
+
+	log Info "Loading host-specific variables..."
+	loadVariables
+
+	log Info "Running Initializers..."
+	initializers
+
+	log Info "Applying Roles..."
+	roles
+
+	log Info "Applying Modules..."
+	modules
+
+	rm $lockFile
+
+	log Success "All done."
+fi
