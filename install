@@ -18,7 +18,7 @@ function install()
 
 	echo -e "Welcome to the Fetch Apply installation script.\n\nPlease answer the following questions about how you would like to\ninstall Fetch Apply. If you are not sure what to put, press enter,\nand the default value in parentheses will be applied."
 
-	echo -e "\n\n${BLUE}Where would you like to install Fetch Apply?\n${CYAN}Installation Path (/var/lib):\t${NO_COLOR}"
+	echo -e "\n\n${BLUE}Where would you like to install Fetch Apply?\n${CYAN}Installation Path (/var/lib):${NO_COLOR}"
 	read INSTALLATION_PATH
 	if [ -z "INSTALLATION_PATH" ]
 	then
@@ -31,28 +31,28 @@ function install()
 		exit 1
 	fi
 
-	echo -e "\n\n${BLUE}Where would you like to create a log file?\n${CYAN}Log file (/var/log/fetchapply.log):\t${NO_COLOR}"
+	echo -e "\n\n${BLUE}Where would you like to create a log file?\n${CYAN}Log file (/var/log/fetchapply.log):${NO_COLOR}"
 	read LOG_FILE_PATH
 	if [ -z "LOG_FILE_PATH" ]
 	then
 		LOG_FILE_PATH="/var/log/fetchapply.log"
 	fi
 
-	echo -e "\n\n${BLUE}What is your operations git URL?\n${CYAN}URL (https://github.com/P5vc/ServerConfigurations.git):\t${NO_COLOR}"
+	echo -e "\n\n${BLUE}What is your operations git URL?\n${CYAN}URL (https://github.com/P5vc/ServerConfigurations.git):${NO_COLOR}"
 	read OPERATIONS_GIT_URL
 	if [ -z "OPERATIONS_GIT_URL" ]
 	then
 		OPERATIONS_GIT_URL="https://github.com/P5vc/ServerConfigurations.git"
 	fi
 
-	echo -e "\n\n${BLUE}What is the desired hostname for this server?\n${CYAN}Hostname (server):\t${NO_COLOR}"
+	echo -e "\n\n${BLUE}What is the desired hostname for this server?\n${CYAN}Hostname (server):${NO_COLOR}"
 	read SERVER_HOSTNAME
 	if [ -z "$SERVER_HOSTNAME" ]
 	then
 		SERVER_HOSTNAME="server"
 	fi
 
-	echo -e "\n\n${BLUE}What is the desired Fetch Apply run frequency? The default is once every 24 hours.\n${CYAN}Run frequency in crontab syntax (${CRONTAB_ENTRY}):\t${NO_COLOR}"
+	echo -e "\n\n${BLUE}What is the desired Fetch Apply run frequency? The default is once every 24 hours.\n${CYAN}Run frequency in crontab syntax (${CRONTAB_ENTRY}):${NO_COLOR}"
 	read THEIR_CRONTAB_ENTRY
 	if [ -n "$THEIR_CRONTAB_ENTRY" ]
 	then
@@ -77,7 +77,7 @@ function install()
 	git clone $FA_GIT_URL ${INSTALLATION_PATH}/fetchapply
 	ln -sf ${INSTALLATION_PATH}/fetchapply/fa /usr/bin/fa
 
-	git clone OPERATIONS_GIT_URL ${INSTALLATION_PATH}/fetchapply/operations
+	git clone $OPERATIONS_GIT_URL ${INSTALLATION_PATH}/fetchapply/operations
 
 	echo "FA_ROOT=${INSTALLATION_PATH}/fetchapply" >> /etc/fetchapply
 	echo "LOG_FILE_PATH=${LOG_FILE_PATH}" >> /etc/fetchapply
@@ -86,7 +86,7 @@ function install()
 	echo "$(cat /etc/crontab | grep -v ${INSTALLATION_PATH}/fetchapply)" > /etc/crontab
 	echo "${CRONTAB_ENTRY} root ${INSTALLATION_PATH}/fetchapply/fa 2>&1" >> /etc/crontab
 
-	echo -e "$\n\n{GREEN}Installation complete."
+	echo -e "\n\n${GREEN}Installation complete.${NO_COLOR}"
 }
 
 install
