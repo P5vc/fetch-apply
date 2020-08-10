@@ -13,6 +13,14 @@ Transparent Server Configuration and Management
 - [Usage](https://github.com/P5vc/FetchApply/blob/master/README.md#usage "Usage")
   - [Learning the Command](https://github.com/P5vc/FetchApply/blob/master/README.md#learning-the-command "Learning the Command")
   - [Learning the Framework](https://github.com/P5vc/FetchApply/blob/master/README.md#learning-the-framework "Learning the Framework")
+    - [Base Structure](https://github.com/P5vc/FetchApply/blob/master/README.md#base-structure "Base Structure")
+    - [Variables](https://github.com/P5vc/FetchApply/blob/master/README.md#variables "Variables")
+    - [Classes](https://github.com/P5vc/FetchApply/blob/master/README.md#classes "Classes")
+    - [Hosts](https://github.com/P5vc/FetchApply/blob/master/README.md#hosts "Hosts")
+    - [Initializers](https://github.com/P5vc/FetchApply/blob/master/README.md#initializers "Initializers")
+    - [Modules](https://github.com/P5vc/FetchApply/blob/master/README.md#modules "Modules")
+    - [Roles](https://github.com/P5vc/FetchApply/blob/master/README.md#roles "Roles")
+- [Example Walk-Through](https://github.com/P5vc/FetchApply/blob/master/README.md#example-walk-through "Example Walk-Through")
 
 ## About
 
