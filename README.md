@@ -6,6 +6,14 @@ Transparent Server Configuration and Management
 
 ------------
 
+### Table of Contents
+
+- [About](https://github.com/P5vc/FetchApply/blob/master/README.md#about "About")
+- [Installation](https://github.com/P5vc/FetchApply/blob/master/README.md#installation "Installation")
+- [Usage](https://github.com/P5vc/FetchApply/blob/master/README.md#usage "Usage")
+  - [Learning the Command](https://github.com/P5vc/FetchApply/blob/master/README.md#learning-the-command "Learning the Command")
+  - [Learning the Framework](https://github.com/P5vc/FetchApply/blob/master/README.md#learning-the-framework "Learning the Framework")
+
 ## About
 
 Fetch Apply is a simple system configuration and management framework designed for transparency. Fetch Apply has many, wonderful advantages and features... here are just a few:
@@ -13,13 +21,13 @@ Fetch Apply is a simple system configuration and management framework designed f
 - Written in Bash
   - Fetch Apply is written in Bash, the standard language behind most commandlines, allowing for streamlined management in a single, simple language.
 - Small codebase
-  - Fetch Apply's entire codebase is minuscule, and contained within a single file. Fetch Apply's purpose is to assist with user-auditable, simple, server management, something that can becomes unrealistic with large codebases and dependencies.
+  - Fetch Apply's entire codebase is minuscule, and contained within a single file. Fetch Apply's purpose is to assist with user-auditable, simple, server management, something that becomes unrealistic with large codebases and dependencies.
 - Standardized but customizable
-  - Fetch Apply uses a standardized framework, with simple terminology, making it easy to use and eliminating the learning curve. The code is simple and descriptive, meaning that Fetch Apply can be customized to suit your needs in a snap.
+  - Fetch Apply uses a standardized framework with simple terminology, making it easy to use and eliminating the learning curve. The code is simple and descriptive, meaning that Fetch Apply can be customized to suit your needs in a snap.
 
 ## Installation
 
-To install and run Fetch Apply on your system, simply run the following commands:
+To install and run Fetch Apply on your system, use the following commands:
 
 ```bash
 curl https://raw.githubusercontent.com/P5vc/FetchApply/master/install -o /tmp/install
@@ -181,7 +189,7 @@ The `variables` file will contain any variables specific to the module. If no ex
 
 A role is a group of modules that work towards completing a specific goal, or share some sort of relation with one another. Roles are created by editing a file within the `roles` directory, and listing, one module per line, the name of each module that makes-up that role. The name of the created role is the name of the file containing its grouped modules.
 
-#### Putting it Together
+## Example Walk-Through
 
 There is a lot of detail above about the different aspects of the Fetch Apply framework. However, I can assure you that it is much less complicated than it seems. With less than 500 lines of code, there's no way we could make it as overwhelming as it may at first seem to you.
 
