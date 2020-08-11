@@ -1,12 +1,12 @@
 # Fetch Apply
 
-Transparent Server Configuration and Management
+### Transparent Server Configuration and Management
 
 ###### Inspired by [aviary.sh](https://github.com/team-video/aviary.sh "aviary.sh")
 
 ------------
 
-### Table of Contents
+# Table of Contents
 
 - [About](https://github.com/P5vc/FetchApply/blob/master/README.md#about "About")
 - [Installation](https://github.com/P5vc/FetchApply/blob/master/README.md#installation "Installation")
@@ -21,9 +21,10 @@ Transparent Server Configuration and Management
     - [Initializers](https://github.com/P5vc/FetchApply/blob/master/README.md#initializers "Initializers")
     - [Modules](https://github.com/P5vc/FetchApply/blob/master/README.md#modules "Modules")
     - [Roles](https://github.com/P5vc/FetchApply/blob/master/README.md#roles "Roles")
-- [Example Walk-Through](https://github.com/P5vc/FetchApply/blob/master/README.md#example-walk-through "Example Walk-Through")
+- [Examples and Walk-Through](https://github.com/P5vc/FetchApply/blob/master/README.md#examples-and-walk-through "Examples and Walk-Through")
+- [Final Thoughts](https://github.com/P5vc/FetchApply/blob/master/README.md#final-thoughts "Final Thoughts")
 
-## About
+# About
 
 Fetch Apply is a simple system configuration and management framework designed for transparency. Fetch Apply has many, wonderful advantages and features... here are just a few:
 
@@ -34,7 +35,7 @@ Fetch Apply is a simple system configuration and management framework designed f
 - Standardized but customizable
   - Fetch Apply uses a standardized framework with simple terminology, making it easy to use and eliminating the learning curve. The code is simple and descriptive, meaning that Fetch Apply can be customized to suit your needs in a snap.
 
-## Installation
+# Installation
 
 To install and run Fetch Apply on your system, use the following commands:
 
@@ -44,14 +45,14 @@ sudo bash /tmp/install
 sudo fa
 ```
 
-## Usage
+# Usage
 
 Learning how to use Fetch Apply is extremely easy, and can be boiled-down to two main steps:
 
 1. Learning the command
 2. Learning the framework
 
-### Learning the Command
+## Learning the Command
 
 Running Fetch Apply from start to finish is admittedly a bit complicated, and it may take some time to memorize its intricacies. But, if you're willing to put in the time and effort, I can assure you that it will be worth-while.
 
@@ -90,11 +91,11 @@ Commands:
   clear-inits              Allow completed initializers to run once more
 ```
 
-### Learning the Framework
+## Learning the Framework
 
 Fetch Apply works by fetching the desired system configuration from a repository of your choosing (public or private), and then applying that configuration to the system on which Fetch Apply was installed.
 
-#### Base Structure
+### Base Structure
 
 In order for Fetch Apply to understand your server configuration, you must start with (and maintain) this standard structure:
 
@@ -115,7 +116,7 @@ To create this base structure quickly, feel free to run the following command in
 mkdir classes initializers modules roles && touch variables
 ```
 
-#### Special Files
+### Special Files
 
 Special Files are the magic that drives Fetch Apply... and they couldn't be any simpler! A special file is simply a file named for one of the three Fetch Apply components (`initializers`, `modules`, and `roles`), containing a list of items from within that component, to apply to the system within its scope.
 
@@ -138,7 +139,7 @@ ufw
 
 - Special Files will only affect servers that are part of same class or host directory that the special files are located in. This allows you to specify and apply different modules, initializers, and roles to different classes of hosts and individual hosts.
 
-#### Variables
+### Variables
 
 In addition to the global `variables` file, any directory containing code to be executed (with the exception of module and host directories, the latter of which may exclusively inherit variables from their class), must include a `variables` file within it. The specific directories requiring a `variables` file are:
 
@@ -160,7 +161,7 @@ In the case that two identical variables are declared, precedence is as follows 
 
 `modules > hosts > classes > global`
 
-#### Classes
+### Classes
 
 Classes are used to distinguish between types of systems. Within the `classes` directory, you may create specifically-named directories to separate your systems/devices/servers into distinct groups.
 
@@ -193,7 +194,7 @@ As has been mentioned above, every class directory **must** contain the followin
 - `roles`
 - `variables`
 
-#### Hosts
+### Hosts
 
 Host directories are contained within a class directory, and are used to override a class's `initializers`, `modules`, `roles`, and `variables`, for a specific host.
 
@@ -208,13 +209,13 @@ As has been mentioned above, every host directory **may** contain the following 
 - `roles`
 - `variables`
 
-#### Initializers
+### Initializers
 
 Initializers are installation/set-up scripts that are designed to only be run once. Their goal is to "initialize" (configure) a system, and shall only be run once on that system.
 
 Initializers are created by adding a file with the desired commands to be run, to the `initializers` directory. The name of the file you create will be the name of that initializer.
 
-#### Modules
+### Modules
 
 Modules are pieces of code that have a specific task or job. Modules are generally related to a single program, and therefore are usually labeled with that program's name.
 
@@ -228,13 +229,17 @@ Fetch Apply comes with `mo` by default. This allows you to use mustache-style te
 
 To use a template, create a template file within the module's directory, then process and write that template within the apply file, as such: `mo moduleName.template > /desired/destination/moduleName.conf`. Note: there is no need to `source mo`.
 
-#### Roles
+### Roles
 
 A role is a group of modules that work towards completing a specific goal, or share some sort of relation with one another. Roles are made by creating a file within the `roles` directory, and listing, one module per line, the name of each module that makes-up that role. The name of the created role is the name of the file containing its grouped modules.
 
-## Example Walk-Through
+# Examples and Walk-Through
 
-> Click [here](https://github.com/P5vc/ServerConfigurations "here") to see a live example, used to configure Priveasy's servers.
+### Some current, production examples:
+
+- [Priveasy Server Configurations](https://github.com/P5vc/ServerConfigurations "Priveasy Server Configurations")
+
+### Walk-Through
 
 There is a lot of detail above about the different aspects of the Fetch Apply framework. However, I can assure you that it is much less complicated than it seems. With less than 500 lines of code, there's no way we could make it as overwhelming as it may at first appear.
 
@@ -291,6 +296,6 @@ To be honest, now that we think about it, `apt` would be a good module to apply 
 
 Finally, let's create an initializer, to set up our webservers. Under the `initializers` directory we create the `webserverInit` file, and fill it with some commands that we use to set up and install the correct applications onto our webservers. Then we edit the `./classes/webserver/initializers` file, and add a line with `webserverInit` in it. Now, all of our webservers will automatically apply our initialization script, the first time that Fetch Apply is run on them... well, all except for `webserver0` and `webserver1`. They have custom files, which are currently blank... so nothing will be done on those servers.
 
-#### Final Thoughts
+# Final Thoughts
 
 It is now up to you to experiment and get creative! If you have any questions, comments, or suggestions, don't hesitate to create issues, pull requests, or email us. We're always looking to better our community (and our documentation, examples, walk-throughs, etc.), and hope that Fetch Apply can help you, as much as it's helped us!
