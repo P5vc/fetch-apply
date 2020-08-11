@@ -240,8 +240,14 @@ function roles
 			cd $moduleDirectory
 
 			log Info "Applying module '${otherLine}'..."
-			source variables
+
+			if [ -e "variables" ]
+			then
+				source variables
+			fi
+
 			. apply 2>&1
+
 			log Success "Module '${otherLine}' successfully applied..."
 
 			cd ${FA_ROOT}
@@ -273,8 +279,14 @@ function modules
 		cd $moduleDirectory
 
 		log Info "Applying module '${line}'..."
-		source variables
+
+		if [ -e "variables" ]
+		then
+			source variables
+		fi
+
 		. apply 2>&1
+
 		log Success "Module '${line}' successfully applied..."
 
 		cd ${FA_ROOT}
