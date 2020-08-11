@@ -217,6 +217,8 @@ Initializers are created by adding a file with the desired commands to be run, t
 
 Modules are pieces of code that have a specific task or job. Modules are generally related to a single program, and therefore are usually labeled with that program's name.
 
+Every (applicable) module is run once every 24 hours (unless you specify a different time period during installation). Therefore, it is important to design your modules with redundancy in mind. In other words, make sure that your modules are meant to be run more than once, and will not "break" anything by doing so. If you would only like code to be run once, use an initializer instead.
+
 To create a module, make a new directory within the `modules` directory. The title of this directory will be the module's name. Within the new directory you just made, create the following, required file: `apply`.
 
 It is recommended to also add a `variables` file, to contain any variables specific to the module. If no extra variables are needed, this file may be left blank or removed. The `apply` module must contain the code to run, in order for the module to be executed. You may create as many additional, supporting files as you wish (such as templates), within the same directory.
