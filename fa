@@ -66,7 +66,7 @@ function handleError
 {
 	local exitCode="$?"
 	local failedCommand="${BASH_COMMAND:-unknown}"
-	log Error "The command '${failedCommand} exited with exit code ${exitCode}."
+	log Error "The command '${failedCommand}' exited with exit code ${exitCode}."
 }
 
 
@@ -197,7 +197,7 @@ function initializers
 
 			if [ -e "${FA_ROOT}/operations/initializers/${line}" ]
 			then
-				. ${FA_ROOT}/operations/initializers/${line} 2>&1
+				source ${FA_ROOT}/operations/initializers/${line} 2>&1
 			else
 				log Error "The initializer '${line}' could not be found.\nExiting..."
 				exit 1
@@ -246,7 +246,7 @@ function roles
 				source variables
 			fi
 
-			. apply 2>&1
+			source apply 2>&1
 
 			log Success "Module '${otherLine}' successfully applied..."
 
@@ -285,7 +285,7 @@ function modules
 			source variables
 		fi
 
-		. apply 2>&1
+		source apply 2>&1
 
 		log Success "Module '${line}' successfully applied..."
 
