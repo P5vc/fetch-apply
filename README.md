@@ -87,6 +87,7 @@ Commands:
   list-classes             List all classes
   list-modules             List all modules
   list-roles               List all roles
+  clear-inits              Allow completed initializers to run once more
 ```
 
 ### Learning the Framework
