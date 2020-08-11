@@ -82,6 +82,7 @@ function install()
 	echo "FA_ROOT=${INSTALLATION_PATH}/fetchapply" > /etc/fetchapply
 	echo "LOG_FILE_PATH=${LOG_FILE_PATH}" >> /etc/fetchapply
 	echo "OPERATIONS_GIT_URL=${OPERATIONS_GIT_URL}" >> /etc/fetchapply
+	echo "MAX_LOG_LENGTH=10000" >> /etc/fetchapply
 
 	echo "$(cat /etc/crontab | grep -v ${INSTALLATION_PATH}/fetchapply)" > /etc/crontab
 	echo "${CRONTAB_ENTRY} root ${INSTALLATION_PATH}/fetchapply/fa 2>&1" >> /etc/crontab

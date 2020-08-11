@@ -62,6 +62,25 @@ function log
 }
 
 
+function logTrim
+{
+	log Info "Inspecting Fetch Apply log..."
+
+	if [ "$(cat $LOG_FILE_PATH | grep -c '')" -gt "$MAX_LOG_LENGTH" ]
+	then
+		if [ -e "${LOG_FILE_PATH}.old" ]
+		then
+			rm ${LOG_FILE_PATH}.old
+		fi
+
+		mv ${LOG_FILE_PATH} ${LOG_FILE_PATH}.old
+		touch ${LOG_FILE_PATH}
+
+		log Success "Fetch Apply log successfully trimmed..."
+	fi
+}
+
+
 function handleError
 {
 	local exitCode="$?"
@@ -435,6 +454,7 @@ then
 
 	touch $lockFile
 
+	logTrim
 	gitFetch
 
 	trap handleError ERR
