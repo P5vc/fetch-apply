@@ -221,6 +221,10 @@ To create a module, make a new directory within the `modules` directory. The tit
 
 The `variables` file will contain any variables specific to the module. If no extra variables are needed, this file may be left blank. The `apply` module must contain the code to run, in order for the module to be executed. You may create as many additional, supporting files as you wish (such as templates), within the same directory.
 
+Fetch Apply comes with `mo` by default. This allows you to use mustache-style templates with your modules. For information on how to format these templates, see the [mo documentation](https://github.com/tests-always-included/mo "mo documentation").
+
+To use a template, create a template file within the module's directory, then process and write that template within the apply file, as such: `mo moduleName.template > /desired/destination/moduleName.conf`. Note: there is no need to `source mo`.
+
 #### Roles
 
 A role is a group of modules that work towards completing a specific goal, or share some sort of relation with one another. Roles are made by creating a file within the `roles` directory, and listing, one module per line, the name of each module that makes-up that role. The name of the created role is the name of the file containing its grouped modules.
