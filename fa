@@ -131,7 +131,7 @@ function gitFetch
 	then
 		if [ -z "$(git -C ${FA_ROOT}/operations status --porcelain)" ]
 		then
-			timeout 300 git -C ${FA_ROOT}/operations fetch > /dev/null
+			timeout 300 git -C ${FA_ROOT}/operations pull > /dev/null
 		else
 			log Error "Operations checkout is dirty."
 			log Info "Run with '--no-fetch' to bypass this check."
