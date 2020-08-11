@@ -139,12 +139,12 @@ ufw
 
 #### Variables
 
-In addition to the global `variables` file, any directory containing code to be executed (with the exception of host directories, which may exclusively inherit variables from their class), must include a `variables` file within it. The specific directories requiring a `variables` file are:
+In addition to the global `variables` file, any directory containing code to be executed (with the exception of module and host directories, the latter of which may exclusively inherit variables from their class), must include a `variables` file within it. The specific directories requiring a `variables` file are:
 
 1. The base directory
 2. Class directories
 3. Host directories (only required if host-specific variables are needed)
-4. Module directories
+4. Module directories (recommended, but not required)
 
 Fetch Apply will automatically scan those directories and load any applicable variables found within them.
 
@@ -217,9 +217,9 @@ Initializers are created by adding a file with the desired commands to be run, t
 
 Modules are pieces of code that have a specific task or job. Modules are generally related to a single program, and therefore are usually labeled with that program's name.
 
-To create a module, make a new directory within the `modules` directory. The title of this directory will be the module's name. Within the new directory you just made, create the following two, required files: `variables` and `apply`.
+To create a module, make a new directory within the `modules` directory. The title of this directory will be the module's name. Within the new directory you just made, create the following, required file: `apply`.
 
-The `variables` file will contain any variables specific to the module. If no extra variables are needed, this file may be left blank. The `apply` module must contain the code to run, in order for the module to be executed. You may create as many additional, supporting files as you wish (such as templates), within the same directory.
+It is recommended to also add a `variables` file, to contain any variables specific to the module. If no extra variables are needed, this file may be left blank or removed. The `apply` module must contain the code to run, in order for the module to be executed. You may create as many additional, supporting files as you wish (such as templates), within the same directory.
 
 Fetch Apply comes with `mo` by default. This allows you to use mustache-style templates with your modules. For information on how to format these templates, see the [mo documentation](https://github.com/tests-always-included/mo "mo documentation").
 
@@ -259,8 +259,7 @@ Let's start piecing it all together, and get an overview of how everything works
 │   └── webserverInit
 ├── modules
 │   └── apt
-│       ├── apply
-│       └── variables
+│       └── apply
 ├── roles
 │   └── webserverMaintenance
 └── variables
@@ -274,7 +273,7 @@ Under `classes`, we have created two two subdirectories, one that will apply to 
 
 We filled-in our class directories with the required, default files.
 
-Under the `modules` directory, we created an `apt` directory (and therefore an `apt` module). Within that directory are the required `apply` and `variable` files. Once again, we left the `variables` file blank. The `apply` file, however, contains some simple commands:
+Under the `modules` directory, we created an `apt` directory (and therefore an `apt` module). Within that directory is the required `apply` file, which contains some simple commands:
 
 ```
 apt-get update
