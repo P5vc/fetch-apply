@@ -4,6 +4,7 @@ set -euo pipefail
 
 
 RED="\033[0;31m"
+YELLOW="\033[0;33m"
 GREEN="\033[0;32m"
 BLUE="\033[0;34m"
 CYAN="\033[0;36m"
@@ -61,7 +62,7 @@ function install()
 
 	if [ -z "$(/usr/bin/which git)" ]
 	then
-		echo -e "\n\n${RED}Error. Git was not found. Attempting to install...${PURPLE}"
+		echo -e "\n\n${YELLOW}Warning: git was not detected.\nAttempting to install git...${PURPLE}"
 		apt-get update
 		apt-get install git -y
 		echo -e "${NO_COLOR}"
