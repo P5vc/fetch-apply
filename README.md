@@ -8,21 +8,21 @@
 
 # Table of Contents
 
-- [About](https://github.com/P5vc/FetchApply/blob/master/README.md#about "About")
-- [Installation](https://github.com/P5vc/FetchApply/blob/master/README.md#installation "Installation")
-- [Usage](https://github.com/P5vc/FetchApply/blob/master/README.md#usage "Usage")
-  - [Learning the Command](https://github.com/P5vc/FetchApply/blob/master/README.md#learning-the-command "Learning the Command")
-  - [Learning the Framework](https://github.com/P5vc/FetchApply/blob/master/README.md#learning-the-framework "Learning the Framework")
-    - [Base Structure](https://github.com/P5vc/FetchApply/blob/master/README.md#base-structure "Base Structure")
-    - [Special Files](https://github.com/P5vc/FetchApply/blob/master/README.md#special-files "Special Files")
-    - [Variables](https://github.com/P5vc/FetchApply/blob/master/README.md#variables "Variables")
-    - [Classes](https://github.com/P5vc/FetchApply/blob/master/README.md#classes "Classes")
-    - [Hosts](https://github.com/P5vc/FetchApply/blob/master/README.md#hosts "Hosts")
-    - [Initializers](https://github.com/P5vc/FetchApply/blob/master/README.md#initializers "Initializers")
-    - [Modules](https://github.com/P5vc/FetchApply/blob/master/README.md#modules "Modules")
-    - [Roles](https://github.com/P5vc/FetchApply/blob/master/README.md#roles "Roles")
-- [Examples and Walk-Through](https://github.com/P5vc/FetchApply/blob/master/README.md#examples-and-walk-through "Examples and Walk-Through")
-- [Final Thoughts](https://github.com/P5vc/FetchApply/blob/master/README.md#final-thoughts "Final Thoughts")
+- [About](#about "About")
+- [Installation](#installation "Installation")
+- [Usage](#usage "Usage")
+  - [Learning the Command](#learning-the-command "Learning the Command")
+  - [Learning the Framework](#learning-the-framework "Learning the Framework")
+    - [Base Structure](#base-structure "Base Structure")
+    - [Special Files](#special-files "Special Files")
+    - [Variables](#variables "Variables")
+    - [Classes](#classes "Classes")
+    - [Hosts](#hosts "Hosts")
+    - [Initializers](#initializers "Initializers")
+    - [Modules](#modules "Modules")
+    - [Roles](#roles "Roles")
+- [Examples and Walk-Through](#examples-and-walk-through "Examples and Walk-Through")
+- [Final Thoughts](#final-thoughts "Final Thoughts")
 
 # About
 
