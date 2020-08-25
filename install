@@ -28,8 +28,23 @@ function install()
 
 	if [ -e "${INSTALLATION_PATH}/fetchapply" ]
 	then
-		echo -e "${RED}Error. An existing Fetch Apply installation was found. Exiting...${NO_COLOR}"
-		exit 1
+		echo -e "${RED}Error. An existing Fetch Apply installation was found.${NO_COLOR}"
+
+		echo -e "\n\n${BLUE}Would you like to reinstall/upgrade Fetch Apply?\nThe entire, current installation will be removed, and all\npreferences, settings, operations, etc. will be lost.${CYAN}Reinstall/Upgrade Fetch Apply (yes):${NO_COLOR}"
+		read UPGRADE_FETCH_APPLY
+		if [ -z "$UPGRADE_FETCH_APPLY" ]
+		then
+			UPGRADE_FETCH_APPLY="yes"
+		fi
+
+		if [ "$UPGRADE_FETCH_APPLY" == "yes" ]
+		then
+			rm -rf /var/lib/fetchapply
+			echo -e "\n\n${GREEN}The old Fetch Apply installation was successfully removed.${NO_COLOR}"
+		else
+			echo -e "\n\n${RED}Leaving the old Fetch Apply installation intact. Exiting...${NO_COLOR}"
+			exit 1
+		fi
 	fi
 
 	echo -e "\n\n${BLUE}Where would you like to create a log file?\n${CYAN}Log file (/var/log/fetchapply.log):${NO_COLOR}"
@@ -80,10 +95,13 @@ function install()
 
 	git clone $OPERATIONS_GIT_URL ${INSTALLATION_PATH}/fetchapply/operations
 
-	echo "FA_ROOT=${INSTALLATION_PATH}/fetchapply" > /etc/fetchapply
-	echo "LOG_FILE_PATH=${LOG_FILE_PATH}" >> /etc/fetchapply
-	echo "OPERATIONS_GIT_URL=${OPERATIONS_GIT_URL}" >> /etc/fetchapply
-	echo "MAX_LOG_LENGTH=10000" >> /etc/fetchapply
+	echo -e "# Fetch Apply Configuration File\n\n# This file contains global variables used within\n# Fetch Apply to modify certain, standard behaviors.\n\n# All possible options, along with their default values, are listed within this file.\n\n# Please refrain from removing/renaming any of these variables,\n# and maintain proper, Bash syntax at all times.\n\n" > /etc/fetchapply
+
+	echo -e "\n# Fetch Apply installation location:\nfa_var_FA_ROOT=${INSTALLATION_PATH}/fetchapply\n" >> /etc/fetchapply
+	echo -e "\n# Fetch Apply log file path:\nfa_var_LOG_FILE_PATH=${LOG_FILE_PATH}\n" >> /etc/fetchapply
+	echo -e "\n# Git URL from which Fetch Apply operations are fetched:\nfa_var_OPERATIONS_GIT_URL=${OPERATIONS_GIT_URL}\n" >> /etc/fetchapply
+	echo -e "\n# Fetch Apply maximum log file size (in lines):\nfa_var_MAX_LOG_LENGTH=10000\n" >> /etc/fetchapply
+	echo -e "\n# Ignore run locks due to errors (but still honor pause locks):\nfa_var_IGNORE_RUN_LOCKS=false" >> /etc/fetchapply
 
 	if [ -e "/etc/cron.d/fa" ]
 	then
