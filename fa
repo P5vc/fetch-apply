@@ -435,8 +435,13 @@ then
 	then
 		if [ "$fa_var_force" == "No" ]
 		then
-			fa_func_log Warning "Lock file found. This means that an error occurred during\na previous execution. You may remove this lock file by\nrunning 'fa recover'.\nExiting..."
-			exit 1
+			if [ "$fa_var_IGNORE_RUN_LOCKS" == "true" ]
+			then
+				fa_func_log Warning "Ignoring the lock file..."
+			else
+				fa_func_log Error "Lock file found. This means that an error occurred during\na previous execution. You may remove this lock file by\nrunning 'fa recover'.\nExiting..."
+				exit 1
+			fi
 		fi
 	fi
 
