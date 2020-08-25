@@ -5,100 +5,100 @@ set -E
 
 
 source /etc/fetchapply
-cd ${FA_ROOT}
+cd ${fa_var_FA_ROOT}
 source mo
 
 
-host=$(hostname)
-directory=""
-specificHostDirectory="No"
+fa_var_host=$(hostname)
+fa_var_directory=""
+fa_var_specificHostDirectory="No"
 
-pauseFile="${FA_ROOT}/status/pause"
-lockFile="${FA_ROOT}/status/lock"
+fa_var_pauseFile="${fa_var_FA_ROOT}/status/pause"
+fa_var_lockFile="${fa_var_FA_ROOT}/status/lock"
 
-fetch="Yes"
-force="No"
-quiet="No"
+fa_var_fetch="Yes"
+fa_var_force="No"
+fa_var_quiet="No"
 
-cmd=""
+fa_var_cmd=""
 
-initCompleted="No"
+fa_var_initCompleted="No"
 
 
-function log
+function fa_func_log
 {
-	RED="\033[0;31m"
-	YELLOW="\033[0;33m"
-	CYAN="\033[0;36m"
-	GREEN="\033[0;32m"
-	NO_COLOR="\033[0m"
+	fa_var_RED="\033[0;31m"
+	fa_var_YELLOW="\033[0;33m"
+	fa_var_CYAN="\033[0;36m"
+	fa_var_GREEN="\033[0;32m"
+	fa_var_NO_COLOR="\033[0m"
 
-	color=""
+	fa_var_color=""
 
 	if [ "$1" == "Error" ]
 	then
-		color="$RED"
+		fa_var_color="$fa_var_RED"
 	elif [ "$1" == "Warning" ]
 	then
-		color="$YELLOW"
+		fa_var_color="$fa_var_YELLOW"
 	elif [ "$1" == "Info" ]
 	then
-		color="$CYAN"
+		fa_var_color="$fa_var_CYAN"
 	elif [ "$1" == "Success" ]
 	then
-		color="$GREEN"
+		fa_var_color="$fa_var_GREEN"
 	fi
 
-	if [ "$quiet" == "No" ]
+	if [ "$fa_var_quiet" == "No" ]
 	then
-		echo -e "${color}${2}${NO_COLOR}"
-		echo -e "$(date)\t${2}" >> $LOG_FILE_PATH
+		echo -e "${fa_var_color}${2}${fa_var_NO_COLOR}"
+		echo -e "$(date)\t${2}" >> $fa_var_LOG_FILE_PATH
 	else
 		if [ "$1" == "Error" ]
 		then
-			echo -e "$(date)\t${2}" >> $LOG_FILE_PATH
+			echo -e "$(date)\t${2}" >> $fa_var_LOG_FILE_PATH
 		fi
 	fi
 }
 
 
-function logTrim
+function fa_func_logTrim
 {
-	log Info "Inspecting Fetch Apply log..."
+	fa_func_log Info "Inspecting Fetch Apply log..."
 
-	if [ "$(cat $LOG_FILE_PATH | grep -c '')" -gt "$MAX_LOG_LENGTH" ]
+	if [ "$(cat $fa_var_LOG_FILE_PATH | grep -c '')" -gt "$fa_var_MAX_LOG_LENGTH" ]
 	then
-		if [ -e "${LOG_FILE_PATH}.old" ]
+		if [ -e "${fa_var_LOG_FILE_PATH}.old" ]
 		then
-			rm ${LOG_FILE_PATH}.old
+			rm ${fa_var_LOG_FILE_PATH}.old
 		fi
 
-		mv ${LOG_FILE_PATH} ${LOG_FILE_PATH}.old
-		touch ${LOG_FILE_PATH}
+		mv ${fa_var_LOG_FILE_PATH} ${fa_var_LOG_FILE_PATH}.old
+		touch ${fa_var_LOG_FILE_PATH}
 
-		log Success "Fetch Apply log successfully trimmed..."
+		fa_func_log Success "Fetch Apply log successfully trimmed..."
 	fi
 }
 
 
-function handleError
+function fa_func_handleError
 {
 	local exitCode="$?"
 	local failedCommand="${BASH_COMMAND:-unknown}"
-	log Error "The command '${failedCommand}' exited with exit code ${exitCode}."
+	fa_func_log Error "The command '${failedCommand}' exited with exit code ${exitCode}."
 }
 
 
-function handleExit
+function fa_func_handleExit
 {
 	if [ "$?" != "0" ]
 	then
-		log Error "Failed.\nExiting..."
+		fa_func_log Error "Failed.\nExiting..."
 	fi
 }
 
 
-function usage
+function fa_func_usage
 {
 cat <<EOF
 fa - transparent server configuration and management
@@ -125,141 +125,141 @@ EOF
 }
 
 
-function gitFetch
+function fa_func_gitFetch
 {
-	if [ "$fetch" == "Yes" ]
+	if [ "$fa_var_fetch" == "Yes" ]
 	then
-		if [ -z "$(git -C ${FA_ROOT}/operations status --porcelain)" ]
+		if [ -z "$(git -C ${fa_var_FA_ROOT}/operations status --porcelain)" ]
 		then
-			timeout 300 git -C ${FA_ROOT}/operations pull > /dev/null
+			timeout 300 git -C ${fa_var_FA_ROOT}/operations pull > /dev/null
 		else
-			log Error "Operations checkout is dirty."
-			log Info "Run with '--no-fetch' to bypass this check."
+			fa_func_log Error "Operations checkout is dirty."
+			fa_func_log Info "Run with '--no-fetch' to bypass this check."
 			exit 1
 		fi
 	else
-		log Info "Skipping fetch..."
+		fa_func_log Info "Skipping fetch..."
 	fi
 }
 
 
-function identifyDirectory
+function fa_func_identifyDirectory
 {
-	while read line
-	do if [ -n "$(echo "$host" | grep "$line")" ]
+	while read fa_var_line
+	do if [ -n "$(echo "$fa_var_host" | grep "$fa_var_line")" ]
 			then
-				directory="$line"
+				fa_var_directory="$fa_var_line"
 			fi
-	done < <(ls -1 ${FA_ROOT}/operations/classes)
+	done < <(ls -1 ${fa_var_FA_ROOT}/operations/classes)
 
-	if [ -z "$directory" ]
+	if [ -z "$fa_var_directory" ]
 	then
-		log Warning "No instructions found for this server.\nExiting..."
+		fa_func_log Warning "No instructions found for this server.\nExiting..."
 		exit 0
 	else
-		log Success "A match was found with the class '${directory}'..."
-		directory="${FA_ROOT}/operations/classes/${directory}"
+		fa_func_log Success "A match was found with the class '${fa_var_directory}'..."
+		fa_var_directory="${fa_var_FA_ROOT}/operations/classes/${fa_var_directory}"
 	fi
 
-	if [ -e "${directory}/${host}" ]
+	if [ -e "${fa_var_directory}/${fa_var_host}" ]
 	then
-		log Success "A specific host directory was identified..."
-		directory="${directory}/${host}"
-		specificHostDirectory="Yes"
+		fa_func_log Success "A specific host directory was identified..."
+		fa_var_directory="${fa_var_directory}/${fa_var_host}"
+		fa_var_specificHostDirectory="Yes"
 	fi
 }
 
 
-function loadVariables
+function fa_func_loadVariables
 {
-	source ${FA_ROOT}/operations/variables
-	if [ "$specificHostDirectory" == "Yes" ]
+	source ${fa_var_FA_ROOT}/operations/variables
+	if [ "$fa_var_specificHostDirectory" == "Yes" ]
 	then
-		source ${directory}/../variables
+		source ${fa_var_directory}/../variables
 	fi
 
-	if [ -e "${directory}/variables" ]
+	if [ -e "${fa_var_directory}/variables" ]
 	then
-		source ${directory}/variables
+		source ${fa_var_directory}/variables
 	fi
 
-	log Success "Host-specific variables loaded..."
+	fa_func_log Success "Host-specific variables loaded..."
 }
 
 
-function initializers
+function fa_func_initializers
 {
-	if [ "$specificHostDirectory" == "Yes" ]
+	if [ "$fa_var_specificHostDirectory" == "Yes" ]
 	then
-		if [ -e "${directory}/initializers" ]
+		if [ -e "${fa_var_directory}/initializers" ]
 		then
-			initDirectory="${directory}"
+			fa_var_initDirectory="${fa_var_directory}"
 		else
-			initDirectory="${directory}/.."
+			fa_var_initDirectory="${fa_var_directory}/.."
 		fi
 	fi
 
-	while read line
-	do initCompleted="No"
-		while read otherLine
-		do if [ "$otherLine" == "$line" ]
+	while read fa_var_line
+	do fa_var_initCompleted="No"
+		while read fa_var_otherLine
+		do if [ "$fa_var_otherLine" == "$fa_var_line" ]
 			then
-				log Info "The '${line}' initializer has already been completed, and will be skipped..."
-				initCompleted="Yes"
+				fa_func_log Info "The '${fa_var_line}' initializer has already been completed, and will be skipped..."
+				fa_var_initCompleted="Yes"
 				break
 			fi
-		done < <(cat ${FA_ROOT}/status/completedInits)
+		done < <(cat ${fa_var_FA_ROOT}/status/completedInits)
 
-		if [ "$initCompleted" == "No" ]
+		if [ "$fa_var_initCompleted" == "No" ]
 		then
-			log Info "Executing the '${line}' initializer..."
-			echo "$line" >> ${FA_ROOT}/status/completedInits
+			fa_func_log Info "Executing the '${fa_var_line}' initializer..."
+			echo "$fa_var_line" >> ${fa_var_FA_ROOT}/status/completedInits
 
-			if [ -e "${FA_ROOT}/operations/initializers/${line}" ]
+			if [ -e "${fa_var_FA_ROOT}/operations/initializers/${fa_var_line}" ]
 			then
-				source ${FA_ROOT}/operations/initializers/${line} 2>&1
+				source ${fa_var_FA_ROOT}/operations/initializers/${fa_var_line} 2>&1
 			else
-				log Error "The initializer '${line}' could not be found.\nExiting..."
+				fa_func_log Error "The initializer '${fa_var_line}' could not be found.\nExiting..."
 				exit 1
 			fi
 
-			log Success "Initializer (${line}) successfully executed..."
+			fa_func_log Success "Initializer (${fa_var_line}) successfully executed..."
 		fi
-	done < <(cat ${initDirectory}/initializers)
+	done < <(cat ${fa_var_initDirectory}/initializers)
 }
 
 
-function roles
+function fa_func_roles
 {
-	if [ "$specificHostDirectory" == "Yes" ]
+	if [ "$fa_var_specificHostDirectory" == "Yes" ]
 	then
-		if [ -e "${directory}/roles" ]
+		if [ -e "${fa_var_directory}/roles" ]
 		then
-			roleDirectory="${directory}"
+			fa_var_roleDirectory="${fa_var_directory}"
 		else
-			roleDirectory="${directory}/.."
+			fa_var_roleDirectory="${fa_var_directory}/.."
 		fi
 	fi
 
-	while read line
-	do log Info "Applying role '${line}'..."
-		if [ ! -e ${FA_ROOT}/operations/roles/${line} ]
+	while read fa_var_line
+	do fa_func_log Info "Applying role '${fa_var_line}'..."
+		if [ ! -e ${fa_var_FA_ROOT}/operations/roles/${fa_var_line} ]
 		then
-			log Error "The role '${line}' could not be found.\nExiting..."
+			fa_func_log Error "The role '${fa_var_line}' could not be found.\nExiting..."
 			exit 1
 		fi
 
-		while read otherLine
-		do moduleDirectory="${FA_ROOT}/operations/modules/${otherLine}"
-			if [ ! -e ${moduleDirectory} ]
+		while read fa_var_otherLine
+		do fa_var_moduleDirectory="${fa_var_FA_ROOT}/operations/modules/${fa_var_otherLine}"
+			if [ ! -e ${fa_var_moduleDirectory} ]
 			then
-				log Error "The module '${otherLine}' could not be found.\nExiting..."
+				fa_func_log Error "The module '${fa_var_otherLine}' could not be found.\nExiting..."
 				exit 1
 			fi
 
-			cd $moduleDirectory
+			cd $fa_var_moduleDirectory
 
-			log Info "Applying module '${otherLine}'..."
+			fa_func_log Info "Applying module '${fa_var_otherLine}'..."
 
 			if [ -e "variables" ]
 			then
@@ -268,37 +268,37 @@ function roles
 
 			source apply 2>&1
 
-			log Success "Module '${otherLine}' successfully applied..."
+			fa_func_log Success "Module '${fa_var_otherLine}' successfully applied..."
 
-			cd ${FA_ROOT}
-		done < <(cat ${FA_ROOT}/operations/roles/${line})
-	done < <(cat ${roleDirectory}/roles)
+			cd ${fa_var_FA_ROOT}
+		done < <(cat ${fa_var_FA_ROOT}/operations/roles/${fa_var_line})
+	done < <(cat ${fa_var_roleDirectory}/roles)
 }
 
 
-function modules
+function fa_func_modules
 {
-	if [ "$specificHostDirectory" == "Yes" ]
+	if [ "$fa_var_specificHostDirectory" == "Yes" ]
 	then
-		if [ -e "${directory}/modules" ]
+		if [ -e "${fa_var_directory}/modules" ]
 		then
-			modDirectory="${directory}"
+			fa_var_modDirectory="${fa_var_directory}"
 		else
-			modDirectory="${directory}/.."
+			fa_var_modDirectory="${fa_var_directory}/.."
 		fi
 	fi
 
-	while read line
-	do moduleDirectory="${FA_ROOT}/operations/modules/${line}"
-		if [ ! -e ${moduleDirectory} ]
+	while read fa_var_line
+	do fa_var_moduleDirectory="${fa_var_FA_ROOT}/operations/modules/${fa_var_line}"
+		if [ ! -e ${fa_var_moduleDirectory} ]
 		then
-			log Error "The module '${line}' could not be found.\nExiting..."
+			fa_func_log Error "The module '${fa_var_line}' could not be found.\nExiting..."
 			exit 1
 		fi
 
-		cd $moduleDirectory
+		cd $fa_var_moduleDirectory
 
-		log Info "Applying module '${line}'..."
+		fa_func_log Info "Applying module '${fa_var_line}'..."
 
 		if [ -e "variables" ]
 		then
@@ -307,175 +307,175 @@ function modules
 
 		source apply 2>&1
 
-		log Success "Module '${line}' successfully applied..."
+		fa_func_log Success "Module '${fa_var_line}' successfully applied..."
 
-		cd ${FA_ROOT}
-	done < <(cat ${modDirectory}/modules)
+		cd ${fa_var_FA_ROOT}
+	done < <(cat ${fa_var_modDirectory}/modules)
 }
 
 
 
 # Parse command-line arguments:
-for argument in "$@"
+for fa_var_argument in "$@"
 do
-	if [ "$argument" == "--help" ]
+	if [ "$fa_var_argument" == "--help" ]
 	then
-		usage
+		fa_func_usage
 		exit 0
-	elif [ "$argument" == "--no-fetch" ]
+	elif [ "$fa_var_argument" == "--no-fetch" ]
 	then
-		fetch="No"
-	elif [ "$argument" == "--force" ]
+		fa_var_fetch="No"
+	elif [ "$fa_var_argument" == "--force" ]
 	then
-		force="Yes"
-	elif [ "$argument" == "--quieter" ]
+		fa_var_force="Yes"
+	elif [ "$fa_var_argument" == "--quieter" ]
 	then
-		quiet="Yes"
-	elif [ "$argument" == "fetch" ]
+		fa_var_quiet="Yes"
+	elif [ "$fa_var_argument" == "fetch" ]
 	then
-		if [ -z "$cmd" ]
+		if [ -z "$fa_var_cmd" ]
 		then
-			cmd="$argument"
+			fa_var_cmd="$fa_var_argument"
 		else
-			log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
+			fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
 		fi
-	elif [ "$argument" == "recover" ]
+	elif [ "$fa_var_argument" == "recover" ]
 	then
-		if [ -z "$cmd" ]
+		if [ -z "$fa_var_cmd" ]
 		then
-			cmd="$argument"
+			fa_var_cmd="$fa_var_argument"
 		else
-			log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
+			fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
 		fi
-	elif [ "$argument" == "pause" ]
+	elif [ "$fa_var_argument" == "pause" ]
 	then
-		if [ -z "$cmd" ]
+		if [ -z "$fa_var_cmd" ]
 		then
-			cmd="$argument"
+			fa_var_cmd="$fa_var_argument"
 		else
-			log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
+			fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
 		fi
-	elif [ "$argument" == "resume" ]
+	elif [ "$fa_var_argument" == "resume" ]
 	then
-		if [ -z "$cmd" ]
+		if [ -z "$fa_var_cmd" ]
 		then
-			cmd="$argument"
+			fa_var_cmd="$fa_var_argument"
 		else
-			log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
+			fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
 		fi
-	elif [ "$argument" == "list-classes" ]
+	elif [ "$fa_var_argument" == "list-classes" ]
 	then
-		if [ -z "$cmd" ]
+		if [ -z "$fa_var_cmd" ]
 		then
-			cmd="$argument"
+			fa_var_cmd="$fa_var_argument"
 		else
-			log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
+			fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
 		fi
-	elif [ "$argument" == "list-modules" ]
+	elif [ "$fa_var_argument" == "list-modules" ]
 	then
-		if [ -z "$cmd" ]
+		if [ -z "$fa_var_cmd" ]
 		then
-			cmd="$argument"
+			fa_var_cmd="$fa_var_argument"
 		else
-			log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
+			fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
 		fi
-	elif [ "$argument" == "list-roles" ]
+	elif [ "$fa_var_argument" == "list-roles" ]
 	then
-		if [ -z "$cmd" ]
+		if [ -z "$fa_var_cmd" ]
 		then
-			cmd="$argument"
+			fa_var_cmd="$fa_var_argument"
 		else
-			log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
+			fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
 		fi
-	elif [ "$argument" == "clear-inits" ]
+	elif [ "$fa_var_argument" == "clear-inits" ]
 	then
-		if [ -z "$cmd" ]
+		if [ -z "$fa_var_cmd" ]
 		then
-			cmd="$argument"
+			fa_var_cmd="$fa_var_argument"
 		else
-			log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
+			fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
 		fi
 	else
-		log Error "'${argument}' is not a recognized option or command.\nRun 'fa --help' for proper usage instructions."
+		fa_func_log Error "'${fa_var_argument}' is not a recognized option or command.\nRun 'fa --help' for proper usage instructions."
 	fi
 done
 
 
-if [ "$cmd" == "fetch" ]
+if [ "$fa_var_cmd" == "fetch" ]
 then
-	gitFetch
-elif [ "$cmd" == "recover" ]
+	fa_func_gitFetch
+elif [ "$fa_var_cmd" == "recover" ]
 then
-	rm $lockFile
-	log Success "Lock file successfully removed..."
-elif [ "$cmd" == "pause" ]
+	rm $fa_var_lockFile
+	fa_func_log Success "Lock file successfully removed..."
+elif [ "$fa_var_cmd" == "pause" ]
 then
-	touch $pauseFile
-	log Success "Fetch Apply successfully paused..."
-elif [ "$cmd" == "resume" ]
+	touch $fa_var_pauseFile
+	fa_func_log Success "Fetch Apply successfully paused..."
+elif [ "$fa_var_cmd" == "resume" ]
 then
-	rm $pauseFile
-	log Success "Fetch Apply successfully resumed..."
-elif [ "$cmd" == "list-classes" ]
+	rm $fa_var_pauseFile
+	fa_func_log Success "Fetch Apply successfully resumed..."
+elif [ "$fa_var_cmd" == "list-classes" ]
 then
-	ls -1 "${FA_ROOT}/operations/classes"
-elif [ "$cmd" == "list-modules" ]
+	ls -1 "${fa_var_FA_ROOT}/operations/classes"
+elif [ "$fa_var_cmd" == "list-modules" ]
 then
-	ls -1 "${FA_ROOT}/operations/modules"
-elif [ "$cmd" == "list-roles" ]
+	ls -1 "${fa_var_FA_ROOT}/operations/modules"
+elif [ "$fa_var_cmd" == "list-roles" ]
 then
-	ls -1 "${FA_ROOT}/operations/roles"
-elif [ "$cmd" == "clear-inits" ]
+	ls -1 "${fa_var_FA_ROOT}/operations/roles"
+elif [ "$fa_var_cmd" == "clear-inits" ]
 then
-	echo "" > ${FA_ROOT}/status/completedInits
-	log Success "Completed initializers cache successfully cleared..."
-elif [ "$cmd" == "" ]
+	echo "" > ${fa_var_FA_ROOT}/status/completedInits
+	fa_func_log Success "Completed initializers cache successfully cleared..."
+elif [ "$fa_var_cmd" == "" ]
 then
-	if [ -e "$lockFile" ]
+	if [ -e "$fa_var_lockFile" ]
 	then
-		if [ "$force" == "No" ]
+		if [ "$fa_var_force" == "No" ]
 		then
-			log Warning "Lock file found. This means that an error occurred during\na previous execution. You may remove this lock file by\nrunning 'fa recover'.\nExiting..."
+			fa_func_log Warning "Lock file found. This means that an error occurred during\na previous execution. You may remove this lock file by\nrunning 'fa recover'.\nExiting..."
 			exit 1
 		fi
 	fi
 
-	if [ -e "$pauseFile" ]
+	if [ -e "$fa_var_pauseFile" ]
 	then
-		if [ "$force" == "No" ]
+		if [ "$fa_var_force" == "No" ]
 		then
-			log Warning "Pause file found. This means that a hold has been manually\nplaced on execution. You may remove this pause file by\nrunning 'fa resume'.\nExiting..."
+			fa_func_log Warning "Pause file found. This means that a hold has been manually\nplaced on execution. You may remove this pause file by\nrunning 'fa resume'.\nExiting..."
 			exit 0
 		fi
 	fi
 
 
-	cd ${FA_ROOT}
+	cd ${fa_var_FA_ROOT}
 
-	touch $lockFile
+	touch $fa_var_lockFile
 
-	logTrim
-	gitFetch
+	fa_func_logTrim
+	fa_func_gitFetch
 
-	trap handleError ERR
-	trap handleExit EXIT
+	trap fa_func_handleError ERR
+	trap fa_func_handleExit EXIT
 
-	log Info "Detecting proper directory..."
-	identifyDirectory
+	fa_func_log Info "Detecting proper directory..."
+	fa_func_identifyDirectory
 
-	log Info "Loading host-specific variables..."
-	loadVariables
+	fa_func_log Info "Loading host-specific variables..."
+	fa_func_loadVariables
 
-	log Info "Running Initializers..."
-	initializers
+	fa_func_log Info "Running Initializers..."
+	fa_func_initializers
 
-	log Info "Applying Roles..."
-	roles
+	fa_func_log Info "Applying Roles..."
+	fa_func_roles
 
-	log Info "Applying Modules..."
-	modules
+	fa_func_log Info "Applying Modules..."
+	fa_func_modules
 
-	rm $lockFile
+	rm $fa_var_lockFile
 
-	log Success "All done."
+	fa_func_log Success "All done."
 fi
