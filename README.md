@@ -64,7 +64,7 @@ Here's what you need to memorize:
 sudo fa
 ```
 
-Yup. That's it. Just type `fa` into your terminal... and you're done!
+Yup. That's it. If you want to run Fetch Apply manually, just type `fa` into your terminal... and you're done!
 
 The full command documentation, for those of you interested:
 
@@ -89,6 +89,34 @@ Commands:
   list-modules             List all modules
   list-roles               List all roles
   clear-inits              Allow completed initializers to run once more
+```
+
+The full, advanced configuration file (with default values):
+
+```bash
+# Fetch Apply Configuration File
+
+# This file contains global variables used within
+# Fetch Apply to modify certain, standard behaviors.
+
+# All possible options, along with their default values,
+# are listed within this file.
+
+# Please refrain from removing/renaming any of these variables,
+# and maintain proper, Bash syntax at all times.
+
+
+# Fetch Apply installation location:
+fa_var_FA_ROOT=/var/lib/fetchapply
+
+# Fetch Apply log file path:
+fa_var_LOG_FILE_PATH=/var/log/fetchapply.log
+
+# Fetch Apply maximum log file size (in lines):
+fa_var_MAX_LOG_LENGTH=10000
+
+# Ignore run locks due to errors (but still honor pause locks):
+fa_var_IGNORE_RUN_LOCKS=false
 ```
 
 ## Learning the Framework
