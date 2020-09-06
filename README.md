@@ -66,7 +66,7 @@ sudo fa
 
 Yup. That's it. If you want to run Fetch Apply manually, just type `fa` into your terminal... and you're done!
 
-The full command documentation, for those of you interested:
+#### The full command documentation, for those of you interested:
 
 ```
 fa - transparent server configuration and management
@@ -91,7 +91,7 @@ Commands:
   clear-inits              Allow completed initializers to run once more
 ```
 
-The full, advanced configuration file (with default values):
+#### The full, advanced configuration file (with default values):
 
 ```bash
 # Fetch Apply Configuration File
