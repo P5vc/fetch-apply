@@ -95,7 +95,7 @@ function install()
 
 	git clone $OPERATIONS_GIT_URL ${INSTALLATION_PATH}/fetchapply/operations
 
-	echo -e "# Fetch Apply Configuration File\n\n# This file contains global variables used within\n# Fetch Apply to modify certain, standard behaviors.\n\n# All possible options, along with their default values, are listed within this file.\n\n# Please refrain from removing/renaming any of these variables,\n# and maintain proper, Bash syntax at all times.\n\n" > /etc/fetchapply
+	echo -e "# Fetch Apply Configuration File\n\n# This file contains global variables used within\n# Fetch Apply to modify certain, standard behaviors.\n\n# All possible options, along with their default values,\n# are listed within this file.\n\n# Please refrain from removing/renaming any of these variables,\n# and maintain proper, Bash syntax at all times.\n\n" > /etc/fetchapply
 
 	echo -e "# Fetch Apply installation location:\nfa_var_FA_ROOT=${INSTALLATION_PATH}/fetchapply\n" >> /etc/fetchapply
 	echo -e "# Fetch Apply log file path:\nfa_var_LOG_FILE_PATH=${LOG_FILE_PATH}\n" >> /etc/fetchapply
