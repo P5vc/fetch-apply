@@ -12,6 +12,18 @@ PURPLE="\033[0;35m"
 NO_COLOR="\033[0m"
 
 
+function uninstall()
+{
+	source /etc/fetchapply
+
+	rm -rf $fa_var_FA_ROOT
+	rm fa_var_LOG_FILE_PATH
+	rm /etc/cron.d/fa
+
+	echo "${GREEN}Fetch Apply successfully uninstalled.${NO_COLOR}"
+}
+
+
 function install()
 {
 	FA_GIT_URL="https://github.com/P5vc/FetchApply.git"
@@ -108,4 +120,20 @@ function install()
 	echo -e "\n\n${GREEN}Installation complete.${NO_COLOR}"
 }
 
-install
+
+if [ $# == 0 ]
+then
+	install
+	exit 0
+fi
+
+
+# Parse command-line arguments:
+for argument in "$@"
+do
+	if [ "$argument" == "--uninstall" ]
+	then
+		uninstall
+		exit 0
+	fi
+done
