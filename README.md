@@ -45,6 +45,13 @@ sudo bash /tmp/install
 sudo fa
 ```
 
+To uninstall Fetch Apply, use the following commands:
+
+```bash
+curl https://raw.githubusercontent.com/P5vc/FetchApply/master/install -o /tmp/install
+sudo bash /tmp/install --uninstall
+```
+
 # Usage
 
 Learning how to use Fetch Apply is extremely easy, and can be boiled-down to two main steps:
