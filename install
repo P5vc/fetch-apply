@@ -147,7 +147,7 @@ do
 	elif [ "${argument:0:20}" == "--installation-path=" ]
 	then
 		INSTALLATION_PATH="${argument:20}"
-	elif [ "${argument:0:16}" == "--crontab-entry=" ]
+	elif [ "${argument:0:16}" == "--log-file-path=" ]
 	then
 		LOG_FILE_PATH="${argument:16}"
 	elif [ "${argument:0:21}" == "--operations-git-url=" ]
@@ -156,7 +156,7 @@ do
 	elif [ "${argument:0:18}" == "--server-hostname=" ]
 	then
 		SERVER_HOSTNAME="${argument:18}"
-	elif [ "${argument:0:16}" == "--log-file-path=" ]
+	elif [ "${argument:0:16}" == "--crontab-entry=" ]
 	then
 		CRONTAB_ENTRY="${argument:16}"
 	else
