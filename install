@@ -62,10 +62,10 @@ function uninstall()
 	source /etc/fetchapply
 
 	rm -rf $fa_var_FA_ROOT
-	rm fa_var_LOG_FILE_PATH
+	rm -f $fa_var_LOG_FILE_PATH
 	rm /etc/cron.d/fa
 
-	echo "${GREEN}Fetch Apply successfully uninstalled.${NO_COLOR}"
+	echo -e "${GREEN}Fetch Apply successfully uninstalled.${NO_COLOR}"
 }
 
 
@@ -160,7 +160,6 @@ do
 	then
 		CRONTAB_ENTRY="${argument:16}"
 	else
-	then
 		echo -e "${RED}Error. The commandline argument '${argument}' is invalid.${NO_COLOR}"
 		exit 1
 	fi
