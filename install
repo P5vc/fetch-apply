@@ -12,6 +12,51 @@ PURPLE="\033[0;35m"
 NO_COLOR="\033[0m"
 
 
+FA_GIT_URL="https://github.com/P5vc/FetchApply.git"
+
+INSTALLATION_PATH="/var/lib"
+LOG_FILE_PATH="/var/log/fetchapply.log"
+OPERATIONS_GIT_URL="https://github.com/P5vc/ServerConfigurations.git"
+SERVER_HOSTNAME="server"
+CRONTAB_ENTRY="$(( RANDOM % 60 )) $(( RANDOM % 24 )) * * *"
+
+
+function install()
+{
+	if [ -z "$(/usr/bin/which git)" ]
+	then
+		echo -e "\n\n${YELLOW}Warning: git was not detected.\nAttempting to install git...${PURPLE}"
+		apt-get update
+		apt-get install git -y
+		echo -e "${NO_COLOR}"
+	else
+		echo -e "\n\n${GREEN}Git detected...${NO_COLOR}"
+	fi
+
+	echo -e "\n\n${GREEN}Beginning installation...${PURPLE}"
+
+	hostnamectl set-hostname $SERVER_HOSTNAME
+
+	mkdir -p ${INSTALLATION_PATH}/fetchapply
+	git clone $FA_GIT_URL ${INSTALLATION_PATH}/fetchapply
+	ln -sf ${INSTALLATION_PATH}/fetchapply/fa /usr/bin/fa
+
+	git clone $OPERATIONS_GIT_URL ${INSTALLATION_PATH}/fetchapply/operations
+
+	echo -e "# Fetch Apply Configuration File\n\n# This file contains global variables used within\n# Fetch Apply to modify certain, standard behaviors.\n\n# All possible options, along with their default values,\n# are listed within this file.\n\n# Please refrain from removing/renaming any of these variables,\n# and maintain proper, Bash syntax at all times.\n\n" > /etc/fetchapply
+
+	echo -e "# Fetch Apply installation location:\nfa_var_FA_ROOT=${INSTALLATION_PATH}/fetchapply\n" >> /etc/fetchapply
+	echo -e "# Fetch Apply log file path:\nfa_var_LOG_FILE_PATH=${LOG_FILE_PATH}\n" >> /etc/fetchapply
+	echo -e "# Fetch Apply maximum log file size (in lines):\nfa_var_MAX_LOG_LENGTH=10000\n" >> /etc/fetchapply
+	echo -e "# Ignore run locks due to errors (but still honor pause locks):\nfa_var_IGNORE_RUN_LOCKS=false" >> /etc/fetchapply
+
+
+	echo -e "SHELL=/bin/sh\nPATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin\n${CRONTAB_ENTRY} root ${INSTALLATION_PATH}/fetchapply/fa 2>&1" > /etc/cron.d/fa
+
+	echo -e "\n\n${GREEN}Installation complete.${NO_COLOR}"
+}
+
+
 function uninstall()
 {
 	source /etc/fetchapply
@@ -24,11 +69,8 @@ function uninstall()
 }
 
 
-function install()
+function interactive()
 {
-	FA_GIT_URL="https://github.com/P5vc/FetchApply.git"
-	CRONTAB_ENTRY="$(( RANDOM % 60 )) $(( RANDOM % 24 )) * * *"
-
 	echo -e "Welcome to the Fetch Apply installation script.\n\nPlease answer the following questions about how you would like to\ninstall Fetch Apply. If you are not sure what to put, press enter,\nand the default value in parentheses will be applied."
 
 	echo -e "\n\n${BLUE}Where would you like to install Fetch Apply?\n${CYAN}Installation Path (/var/lib):${NO_COLOR}"
@@ -84,47 +126,14 @@ function install()
 	read THEIR_CRONTAB_ENTRY
 	if [ -n "$THEIR_CRONTAB_ENTRY" ]
 	then
-		CRONTAB_ENTRY=$"THEIR_CRONTAB_ENTRY"
+		CRONTAB_ENTRY="$THEIR_CRONTAB_ENTRY"
 	fi
-
-	if [ -z "$(/usr/bin/which git)" ]
-	then
-		echo -e "\n\n${YELLOW}Warning: git was not detected.\nAttempting to install git...${PURPLE}"
-		apt-get update
-		apt-get install git -y
-		echo -e "${NO_COLOR}"
-	else
-		echo -e "\n\n${GREEN}Git detected...${NO_COLOR}"
-	fi
-
-	echo -e "\n\n${GREEN}Beginning installation...${PURPLE}"
-
-	hostnamectl set-hostname $SERVER_HOSTNAME
-
-	mkdir -p ${INSTALLATION_PATH}/fetchapply
-	git clone $FA_GIT_URL ${INSTALLATION_PATH}/fetchapply
-	ln -sf ${INSTALLATION_PATH}/fetchapply/fa /usr/bin/fa
-
-	git clone $OPERATIONS_GIT_URL ${INSTALLATION_PATH}/fetchapply/operations
-
-	echo -e "# Fetch Apply Configuration File\n\n# This file contains global variables used within\n# Fetch Apply to modify certain, standard behaviors.\n\n# All possible options, along with their default values,\n# are listed within this file.\n\n# Please refrain from removing/renaming any of these variables,\n# and maintain proper, Bash syntax at all times.\n\n" > /etc/fetchapply
-
-	echo -e "# Fetch Apply installation location:\nfa_var_FA_ROOT=${INSTALLATION_PATH}/fetchapply\n" >> /etc/fetchapply
-	echo -e "# Fetch Apply log file path:\nfa_var_LOG_FILE_PATH=${LOG_FILE_PATH}\n" >> /etc/fetchapply
-	echo -e "# Fetch Apply maximum log file size (in lines):\nfa_var_MAX_LOG_LENGTH=10000\n" >> /etc/fetchapply
-	echo -e "# Ignore run locks due to errors (but still honor pause locks):\nfa_var_IGNORE_RUN_LOCKS=false" >> /etc/fetchapply
-
-
-	echo -e "SHELL=/bin/sh\nPATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin\n${CRONTAB_ENTRY} root ${INSTALLATION_PATH}/fetchapply/fa 2>&1" > /etc/cron.d/fa
-
-	echo -e "\n\n${GREEN}Installation complete.${NO_COLOR}"
 }
 
 
 if [ $# == 0 ]
 then
-	install
-	exit 0
+	interactive
 fi
 
 
@@ -135,5 +144,27 @@ do
 	then
 		uninstall
 		exit 0
+	elif [ "${argument:0:20}" == "--installation-path=" ]
+	then
+		INSTALLATION_PATH="${argument:20}"
+	elif [ "${argument:0:16}" == "--crontab-entry=" ]
+	then
+		LOG_FILE_PATH="${argument:16}"
+	elif [ "${argument:0:21}" == "--operations-git-url=" ]
+	then
+		OPERATIONS_GIT_URL="${argument:21}"
+	elif [ "${argument:0:18}" == "--server-hostname=" ]
+	then
+		SERVER_HOSTNAME="${argument:18}"
+	elif [ "${argument:0:16}" == "--log-file-path=" ]
+	then
+		CRONTAB_ENTRY="${argument:16}"
+	else
+	then
+		echo -e "${RED}Error. The commandline argument '${argument}' is invalid.${NO_COLOR}"
+		exit 1
 	fi
 done
+
+
+install
