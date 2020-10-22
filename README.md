@@ -95,6 +95,8 @@ sudo fa
 
 Yup. That's it. If you want to run Fetch Apply manually, just type `fa` into your terminal... and you're done!
 
+This command will do a git pull to fetch your operations repository, then apply!
+
 #### The full command documentation, for those of you interested:
 
 ```
