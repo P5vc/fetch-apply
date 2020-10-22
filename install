@@ -17,18 +17,18 @@ FA_GIT_URL="https://github.com/P5vc/FetchApply.git"
 INSTALLATION_PATH="/var/lib"
 LOG_FILE_PATH="/var/log/fetchapply.log"
 OPERATIONS_GIT_URL="https://github.com/P5vc/ServerConfigurations.git"
-SERVER_HOSTNAME="$(hostname)"
+SERVER_HOSTNAME=""
 CRONTAB_ENTRY="$(( RANDOM % 60 )) $(( RANDOM % 24 )) * * *"
 
 function show_help()
 {
 	echo "Usage: `basename $0` [OPTIONS]"
 	echo "    where allowed options are:"
-	echo "         --installation-path=/var/lib				Where to install fetchapply to"
-	echo "         --log-file-path=/var/log/fetchapply.log                  Where to log fetchapply output to"
-	echo "         --operations-git-url=https://github.com/me/fa.git	The git repo containing your fa config"
-	echo "         --server-hostname=my-server				If specified, the hostname will be set to this"
-	echo "         --crontab-entry=*/30 * * * *				How often to run fetchapply (default is once a day at a random hour/minute)"
+	echo "         --installation-path=/var/lib                        Where to install fetchapply to"
+	echo "         --log-file-path=/var/log/fetchapply.log             Where to log fetchapply output to"
+	echo "         --operations-git-url=https://github.com/me/fa.git   The git repo containing your fa config"
+	echo "         --server-hostname=my-server                         If specified, the hostname will be set to this, otherwise left as is"
+	echo "         --crontab-entry='*/30 * * * *'                      How often to run fetchapply (default is once a day at a random hour/minute)"
 	exit 0
 }
 
@@ -133,7 +133,7 @@ function interactive()
 	read SERVER_HOSTNAME
 	if [ -z "$SERVER_HOSTNAME" ]
 	then
-		SERVER_HOSTNAME="server"
+		SERVER_HOSTNAME="$(hostname)"
 	fi
 
 	echo -e "\n\n${BLUE}What is the desired Fetch Apply run frequency? The default is once every 24 hours.\n${CYAN}Run frequency in crontab syntax (${CRONTAB_ENTRY}):${NO_COLOR}"
