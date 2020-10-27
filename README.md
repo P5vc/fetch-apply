@@ -95,6 +95,8 @@ sudo fa
 
 Yup. That's it. If you want to run Fetch Apply manually, just type `fa` into your terminal... and you're done!
 
+`fa` will now execute a `git pull` to grab the latest updates to your `operations` repository, and then apply any of the applicable `modules` or (new) `initializers` as outlined therein!
+
 #### The full command documentation, for those of you interested:
 
 ```
