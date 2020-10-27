@@ -29,6 +29,8 @@ Usage:
     `basename $0` [OPTIONS]
 
 Options and Default Values:
+    --help
+        Show this help message
     --uninstall
         Uninstall Fetch Apply
     --installation-path=/var/lib
