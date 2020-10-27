@@ -45,18 +45,30 @@ sudo bash /tmp/install
 sudo fa
 ```
 
-To install Fetch Apply non-interactively, supply your installation preferences via any of the following, valid commandline arguments:
+To install Fetch Apply non-interactively, you may supply your installation preferences via any number of commandline arguments, as outlined in the help message, below:
 
-```bash
-# Fetch Apply installation script commandline arguments and default values:
+```
+Fetch Apply Installation Script
 
---installation-path=/var/lib
---log-file-path=/var/log/fetchapply.log
---operations-git-url=https://github.com/P5vc/ServerConfigurations.git
---server-hostname=server
---crontab-entry="0 0 * * *"
+Usage:
+    install [OPTIONS]
 
-# Note: --crontab-entry does not have a static default value: its value is randomized with every installation.
+Options and Default Values:
+    --help
+        Show this help message
+    --uninstall
+        Uninstall Fetch Apply
+    --installation-path=/var/lib
+        Fetch Apply installation location
+    --log-file-path=/var/log/fetchapply.log
+        Fetch Apply log location
+    --server-hostname=${SERVER_HOSTNAME}
+        Server hostname to use
+    --operations-git-url=https://github.com/P5vc/ServerConfigurations.git
+        URL to your operations (Fetch Apply configuration) repository
+    --crontab-entry="0 0 * * *"
+        Crontab entry indicating how often to run Fetch Apply; the default is to run
+        Fetch Apply at a random time (determined upon installation), once every 24 hours.
 ```
 
 A non-interactive installation example:
