@@ -62,7 +62,7 @@ Options and Default Values:
         Fetch Apply installation location
     --log-file-path=/var/log/fetchapply.log
         Fetch Apply log location
-    --server-hostname=${SERVER_HOSTNAME}
+    --server-hostname=yourCurrentHostname
         Server hostname to use
     --operations-git-url=https://github.com/P5vc/ServerConfigurations.git
         URL to your operations (Fetch Apply configuration) repository
