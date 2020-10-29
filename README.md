@@ -128,6 +128,7 @@ Commands:
   recover                  Reset run lock file after a failure
   pause                    Set the pause lock to avoid periodic runs while debugging
   resume                   Resume periodic runs after a pause
+  list-classes-to-run      List all classes applicable to the local system
   list-classes             List all classes
   list-modules             List all modules
   list-roles               List all roles

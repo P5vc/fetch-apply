@@ -116,6 +116,7 @@ Commands:
   recover                  Reset run lock file after a failure
   pause                    Set the pause lock to avoid periodic runs while debugging
   resume                   Resume periodic runs after a pause
+  list-classes-to-run      List all classes applicable to the local system
   list-classes             List all classes
   list-modules             List all modules
   list-roles               List all roles
@@ -386,6 +387,14 @@ do
 		else
 			fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
 		fi
+	elif [ "$fa_var_argument" == "list-classes-to-run" ]
+	then
+		if [ -z "$fa_var_cmd" ]
+		then
+			fa_var_cmd="$fa_var_argument"
+		else
+			fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
+		fi
 	elif [ "$fa_var_argument" == "list-classes" ]
 	then
 		if [ -z "$fa_var_cmd" ]
@@ -439,6 +448,9 @@ elif [ "$fa_var_cmd" == "resume" ]
 then
 	rm $fa_var_pauseFile
 	fa_func_log Success "Fetch Apply successfully resumed..."
+elif [ "$fa_var_cmd" == "list-classes-to-run" ]
+then
+	fa_func_identifyApplicableClasses
 elif [ "$fa_var_cmd" == "list-classes" ]
 then
 	ls -1 "${fa_var_FA_ROOT}/operations/classes"
