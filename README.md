@@ -159,6 +159,9 @@ fa_var_LOG_FILE_PATH=/var/log/fetchapply.log
 # Fetch Apply maximum log file size (in lines):
 fa_var_MAX_LOG_LENGTH=10000
 
+# Allow automatic class assignments:
+fa_var_AUTOMATIC_CLASS_ASSIGNMENT=true
+
 # Ignore run locks due to errors (but still honor pause locks):
 fa_var_IGNORE_RUN_LOCKS=false
 ```

@@ -74,6 +74,7 @@ function install()
 	echo -e "# Fetch Apply installation location:\nfa_var_FA_ROOT=${INSTALLATION_PATH}/fetchapply\n" >> /etc/fetchapply
 	echo -e "# Fetch Apply log file path:\nfa_var_LOG_FILE_PATH=${LOG_FILE_PATH}\n" >> /etc/fetchapply
 	echo -e "# Fetch Apply maximum log file size (in lines):\nfa_var_MAX_LOG_LENGTH=10000\n" >> /etc/fetchapply
+	echo -e "# Allow automatic class assignments:\nfa_var_AUTOMATIC_CLASS_ASSIGNMENT=true\n" >> /etc/fetchapply
 	echo -e "# Ignore run locks due to errors (but still honor pause locks):\nfa_var_IGNORE_RUN_LOCKS=false" >> /etc/fetchapply
 
 
