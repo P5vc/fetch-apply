@@ -89,6 +89,7 @@ function uninstall()
 
 	rm -rf $fa_var_FA_ROOT
 	rm -f $fa_var_LOG_FILE_PATH
+	rm -f ${fa_var_LOG_FILE_PATH}.old
 	rm /etc/cron.d/fa
 
 	echo -e "${GREEN}Fetch Apply successfully uninstalled.${NO_COLOR}"
