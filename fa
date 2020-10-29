@@ -146,16 +146,42 @@ function fa_func_gitFetch
 function fa_func_identifyApplicableClasses
 {
 	for fa_var_line in $(ls -1 ${fa_var_FA_ROOT}/operations/classes)
-	do if [ -n "$(echo $fa_var_host | grep $fa_var_line)" ]
+	do
+		# Handle manual assignments:
+		if [ -e "${fa_var_FA_ROOT}/operations/classes/${fa_var_line}/assignments" ]
 		then
-			fa_func_log Success "A match was found with the class '${fa_var_line}'..."
+			fa_var_manually_set=false
 
-			if [ -e "${fa_var_FA_ROOT}/operations/classes/${fa_var_line}/${fa_var_host}" ]
+			for fa_var_line2 in "$(cat ${fa_var_FA_ROOT}/operations/classes/${fa_var_line}/assignments)"
+			do
+				if [ "$fa_var_line2" == "$fa_var_host" ]
+				then
+					fa_func_log Success "The class '${fa_var_line}' was manually assigned to this host..."
+					fa_var_directories="${fa_var_directories}${fa_var_FA_ROOT}/operations/classes/${fa_var_line} "
+					fa_var_manually_set=true
+				fi
+			done
+
+			if [ "$fa_var_manually_set" == "true" ]
 			then
-				fa_func_log Success "A specific host directory was identified within the '${fa_var_line}' class..."
-				fa_var_directories="${fa_var_directories}${fa_var_FA_ROOT}/operations/classes/${fa_var_line}/${fa_var_host} "
-			else
-				fa_var_directories="${fa_var_directories}${fa_var_FA_ROOT}/operations/classes/${fa_var_line} "
+				continue
+			fi
+		fi
+
+		# Handle automatic assignments:
+		if [ "$fa_var_AUTOMATIC_CLASS_ASSIGNMENT" == "true" ]
+		then
+			if [ -n "$(echo $fa_var_host | grep $fa_var_line)" ]
+			then
+				fa_func_log Success "A match was found with the class '${fa_var_line}'..."
+
+				if [ -e "${fa_var_FA_ROOT}/operations/classes/${fa_var_line}/${fa_var_host}" ]
+				then
+					fa_func_log Success "A specific host directory was identified within the '${fa_var_line}' class..."
+					fa_var_directories="${fa_var_directories}${fa_var_FA_ROOT}/operations/classes/${fa_var_line}/${fa_var_host} "
+				else
+					fa_var_directories="${fa_var_directories}${fa_var_FA_ROOT}/operations/classes/${fa_var_line} "
+				fi
 			fi
 		fi
 	done
