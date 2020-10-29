@@ -212,10 +212,10 @@ ufw
 
 ### Variables
 
-In addition to the global `variables` file, any directory containing code to be executed (with the exception of module and host directories, the latter of which may exclusively inherit variables from their class), must include a `variables` file within it. The specific directories requiring a `variables` file are:
+In addition to the global `variables` file, any directory containing code to be executed should include a `variables` file within it. The specific directories requiring a `variables` file are:
 
 1. The base directory
-2. Class directories
+2. Class directories (only required if class-specific variables are needed)
 3. Host directories (only required if host-specific variables are needed)
 4. Module directories (recommended, but not required)
 
@@ -263,7 +263,6 @@ As has been mentioned above, every class directory **must** contain the followin
 - `initializers`
 - `modules`
 - `roles`
-- `variables`
 
 ### Hosts
 
