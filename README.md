@@ -216,9 +216,9 @@ ufw
 
 ### Variables
 
-In addition to the global `variables` file, any directory containing code to be executed should include a `variables` file within it. The specific directories requiring a `variables` file are:
+In addition to the global `variables` file, any directory containing code to be executed should include a `variables` file within it. The specific directories hosting a `variables` file are:
 
-1. The base directory
+1. The base directory (required)
 2. Class directories (only required if class-specific variables are needed)
 3. Host directories (only required if host-specific variables are needed)
 4. Module directories (recommended, but not required)
@@ -240,7 +240,7 @@ In the case that two identical variables are declared, precedence is as follows 
 
 Classes are used to distinguish between types of systems. Within the `classes` directory, you may create specifically-named directories to separate your systems/devices/servers into distinct groups.
 
-Fetch Apply will determine which class applies by searching for the first directory within the `classes` directory, that contains the system it's installed-on's hostname.
+Fetch Apply will determine which classes apply by searching for directories within the `classes` directory that contain the system it's installed-on's hostname.
 
 For example, let's say that you have the following servers that you need to maintain:
 
@@ -262,7 +262,9 @@ Servers within the `webserver` class will likely share similar maintenance tasks
 
 Because each webserver's hostname contains `webserver` somewhere within it, and each database server's hostname contains `database` somewhere within it, yet no webserver's hostname contains `database` within it and no database server's hostname contains `webserver` within it, Fetch Apply will automatically identify and associate each server with its correct class.
 
-As has been mentioned above, every class directory **must** contain the following files (although they may be left blank):
+It is possible to make exceptions to Fetch Apply's automatic class identification by including an `assignments` file within a class directory. In this file, you should list, one per line, the hostname of each system to which you would also like the class applied. This will force the class to be applied to any specified hosts, regardless of whether or not their hostname matches with the class name. If you wish to disable automatic class detection and assignment altogether, and opt for manually assigning each host to its class(es) via `assignments` files within your class directories, then you may set `fa_var_AUTOMATIC_CLASS_ASSIGNMENT` equal to `false`, in your Fetch Apply configuration file (located at `/etc/fetchapply`).
+
+While `assignments` files are optional, keep in mind that every class directory **must** contain the following files (although they may be left blank):
 
 - `initializers`
 - `modules`
