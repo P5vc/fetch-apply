@@ -145,20 +145,40 @@ function fa_func_gitFetch
 
 function fa_func_identifyApplicableClasses
 {
-	for fa_var_line in $(ls -1 ${fa_var_FA_ROOT}/operations/classes)
-	do
+	for fa_var_line in ""$(ls -1 ${fa_var_FA_ROOT}/operations/classes | tr '\n' ' ')""
+	do fa_var_line="$(echo $fa_var_line | tr -d '[:space:]')"
+
+		if [ -z "$fa_var_line" ]
+		then
+			continue
+		fi
+
 		# Handle manual assignments:
 		if [ -e "${fa_var_FA_ROOT}/operations/classes/${fa_var_line}/assignments" ]
 		then
 			fa_var_manually_set=false
 
-			for fa_var_line2 in "$(cat ${fa_var_FA_ROOT}/operations/classes/${fa_var_line}/assignments)"
-			do
+			for fa_var_line2 in ""$(cat ${fa_var_FA_ROOT}/operations/classes/${fa_var_line}/assignments | tr '\n' ' ')""
+			do fa_var_line2="$(echo $fa_var_line2 | tr -d '[:space:]')"
+
+				if [ -z "$fa_var_line2" ]
+				then
+					continue
+				fi
+
 				if [ "$fa_var_line2" == "$fa_var_host" ]
 				then
 					fa_func_log Success "The class '${fa_var_line}' was manually assigned to this host..."
-					fa_var_directories="${fa_var_directories}${fa_var_FA_ROOT}/operations/classes/${fa_var_line} "
 					fa_var_manually_set=true
+
+					# Check for a host directory within the assigned class:
+					if [ -e "${fa_var_FA_ROOT}/operations/classes/${fa_var_line}/${fa_var_host}" ]
+					then
+						fa_func_log Success "A specific host directory was identified within the '${fa_var_line}' class..."
+						fa_var_directories="${fa_var_directories}${fa_var_FA_ROOT}/operations/classes/${fa_var_line}/${fa_var_host} "
+					else
+						fa_var_directories="${fa_var_directories}${fa_var_FA_ROOT}/operations/classes/${fa_var_line} "
+					fi
 				fi
 			done
 
@@ -171,7 +191,7 @@ function fa_func_identifyApplicableClasses
 		# Handle automatic assignments:
 		if [ "$fa_var_AUTOMATIC_CLASS_ASSIGNMENT" == "true" ]
 		then
-			if [ -n "$(echo $fa_var_host | grep $fa_var_line)" ]
+			if [ -n "$(echo $fa_var_host | grep "$fa_var_line")" ]
 			then
 				fa_func_log Success "A match was found with the class '${fa_var_line}'..."
 
@@ -199,14 +219,30 @@ function fa_func_loadVariables
 	source ${fa_var_FA_ROOT}/operations/variables
 
 	for fa_var_directory in $fa_var_directories
-	do
+	do fa_var_directory="$(echo $fa_var_directory | tr -d '[:space:]')"
+
+		if [ -z "$fa_var_directory" ]
+		then
+			continue
+		fi
+
 		if [ -e "${fa_var_directory}/variables" ]
 		then
 			source ${fa_var_directory}/variables
 		fi
+
+		# Check if this is a host or class directory:
+		if [ -n "$(echo "$fa_var_directory" | grep -E "classes/[[:alnum:]:;\"\'\`|~,><.?_+=\!@#\$%^&*()\-]{1,}/$(basename $fa_var_directory)$")" ]
+		then
+			# This is a host directory
+			if [ -e "${fa_var_directory}/../variables" ]
+			then
+				source ${fa_var_directory}/../variables
+			fi
+		fi
 	done
 
-	fa_func_log Success "Host-specific variables loaded..."
+	fa_func_log Success "Host-specific base variables loaded..."
 }
 
 
@@ -214,8 +250,15 @@ function fa_func_initializers
 {
 	fa_var_initFileToUse=""
 
-	for fa_var_line in fa_var_directories
-	do fa_var_initFileToUse="${fa_var_line}/initializers"
+	for fa_var_line in $fa_var_directories
+	do fa_var_line="$(echo $fa_var_line | tr -d '[:space:]')"
+
+		if [ -z "$fa_var_line" ]
+		then
+			continue
+		fi
+
+		fa_var_initFileToUse="${fa_var_line}/initializers"
 
 		# Check if this is a host or class directory:
 		if [ -n "$(echo "$fa_var_line" | grep -E "classes/[[:alnum:]:;\"\'\`|~,><.?_+=\!@#\$%^&*()\-]{1,}/$(basename $fa_var_line)$")" ]
@@ -227,16 +270,31 @@ function fa_func_initializers
 			fi
 		fi
 
-		for fa_var_line2 in "$(cat $fa_var_initFileToUse)"
-		do fa_var_initCompleted="No"
+		for fa_var_line2 in ""$(cat $fa_var_initFileToUse | tr '\n' ' ')""
+		do fa_var_line2="$(echo $fa_var_line2 | tr -d '[:space:]')"
 
-			for fa_var_line3 in "$(cat ${fa_var_FA_ROOT}/status/completedInits)"
-			do if [ "$fa_var_line2" == "$fa_var_line3" ]
+			if [ -z "$fa_var_line2" ]
 			then
-				fa_func_log Info "The '${fa_var_line2}' initializer has already been completed, and will be skipped..."
-				fa_var_initCompleted="Yes"
-				break
+				continue
 			fi
+
+			fa_var_initCompleted="No"
+
+			for fa_var_line3 in ""$(cat ${fa_var_FA_ROOT}/status/completedInits | tr '\n' ' ')""
+			do fa_var_line3="$(echo $fa_var_line3 | tr -d '[:space:]')"
+
+				if [ -z "$fa_var_line3" ]
+				then
+					continue
+				fi
+
+				if [ "$fa_var_line2" == "$fa_var_line3" ]
+				then
+					fa_func_log Info "The '${fa_var_line2}' initializer has already been completed, and will be skipped..."
+					fa_var_initCompleted="Yes"
+					break
+				fi
+			done
 
 			if [ "$fa_var_initCompleted" == "No" ]
 			then
@@ -254,7 +312,6 @@ function fa_func_initializers
 			fa_func_log Success "Initializer (${fa_var_line}) successfully executed..."
 
 			fi
-			done
 		done
 	done
 }
@@ -264,8 +321,15 @@ function fa_func_roles
 {
 	fa_var_rolesFileToUse=""
 
-	for fa_var_line in fa_var_directories
-	do fa_var_rolesFileToUse="${fa_var_line}/roles"
+	for fa_var_line in $fa_var_directories
+	do fa_var_line="$(echo $fa_var_line | tr -d '[:space:]')"
+
+		if [ -z "$fa_var_line" ]
+		then
+			continue
+		fi
+
+		fa_var_rolesFileToUse="${fa_var_line}/roles"
 
 		# Check if this is a host or class directory:
 		if [ -n "$(echo "$fa_var_line" | grep -E "classes/[[:alnum:]:;\"\'\`|~,><.?_+=\!@#\$%^&*()\-]{1,}/$(basename $fa_var_line)$")" ]
@@ -277,13 +341,27 @@ function fa_func_roles
 			fi
 		fi
 
-		for fa_var_line2 in "$(cat $fa_var_rolesFileToUse)"
-		do if [ -e ${fa_var_FA_ROOT}/operations/roles/${fa_var_line2} ]
+		for fa_var_line2 in ""$(cat $fa_var_rolesFileToUse | tr '\n' ' ')""
+		do fa_var_line2="$(echo $fa_var_line2 | tr -d '[:space:]')"
+
+			if [ -z "$fa_var_line2" ]
+			then
+				continue
+			fi
+
+			if [ -e ${fa_var_FA_ROOT}/operations/roles/${fa_var_line2} ]
 			then
 				fa_func_log Info "Applying role '${fa_var_line2}'..."
 
-				for fa_var_line3 in "$(cat ${fa_var_FA_ROOT}/operations/roles/${fa_var_line2})"
-				do fa_var_moduleDirectory="${fa_var_FA_ROOT}/operations/modules/${fa_var_line3}"
+				for fa_var_line3 in ""$(cat ${fa_var_FA_ROOT}/operations/roles/${fa_var_line2} | tr '\n' ' ')""
+				do fa_var_line3="$(echo $fa_var_line3 | tr -d '[:space:]')"
+
+					if [ -z "$fa_var_line3" ]
+					then
+						continue
+					fi
+
+					fa_var_moduleDirectory="${fa_var_FA_ROOT}/operations/modules/${fa_var_line3}"
 					if [ ! -e "${fa_var_moduleDirectory}" ]
 					then
 						fa_func_log Error "The module '${fa_var_line3}' could not be found.\nExiting..."
@@ -321,8 +399,15 @@ function fa_func_modules
 {
 	fa_var_modulesFileToUse=""
 
-	for fa_var_line in fa_var_directories
-	do fa_var_modulesFileToUse="${fa_var_line}/modules"
+	for fa_var_line in $fa_var_directories
+	do fa_var_line="$(echo $fa_var_line | tr -d '[:space:]')"
+
+		if [ -z "$fa_var_line" ]
+		then
+			continue
+		fi
+
+		fa_var_modulesFileToUse="${fa_var_line}/modules"
 
 		# Check if this is a host or class directory:
 		if [ -n "$(echo "$fa_var_line" | grep -E "classes/[[:alnum:]:;\"\'\`|~,><.?_+=\!@#\$%^&*()\-]{1,}/$(basename $fa_var_line)$")" ]
@@ -334,8 +419,15 @@ function fa_func_modules
 			fi
 		fi
 
-		for fa_var_line2 in "$(cat $fa_var_modulesFileToUse)"
-		do fa_var_moduleDirectory="${fa_var_FA_ROOT}/operations/modules/${fa_var_line2}"
+		for fa_var_line2 in ""$(cat $fa_var_modulesFileToUse | tr '\n' ' ')""
+		do fa_var_line2="$(echo $fa_var_line2 | tr -d '[:space:]')"
+
+			if [ -z "$fa_var_line2" ]
+			then
+				continue
+			fi
+
+			fa_var_moduleDirectory="${fa_var_FA_ROOT}/operations/modules/${fa_var_line2}"
 			if [ ! -e "${fa_var_moduleDirectory}" ]
 			then
 				fa_func_log Error "The module '${fa_var_line2}' could not be found.\nExiting..."
