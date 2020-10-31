@@ -75,7 +75,7 @@ function install()
 	echo -e "# Fetch Apply log file path:\nfa_var_LOG_FILE_PATH=${LOG_FILE_PATH}\n" >> /etc/fetchapply
 	echo -e "# Fetch Apply maximum log file size (in lines):\nfa_var_MAX_LOG_LENGTH=10000\n" >> /etc/fetchapply
 	echo -e "# Allow automatic class assignments:\nfa_var_AUTOMATIC_CLASS_ASSIGNMENT=true\n" >> /etc/fetchapply
-	echo -e "# Ignore run locks due to errors (but still honor pause locks):\nfa_var_IGNORE_RUN_LOCKS=false" >> /etc/fetchapply
+	echo -e "# Ignore errors (pause locks will be honored, but execution will not\nhalt for run locks or after any command returns a non-zero exit code):\nfa_var_IGNORE_ERRORS=false" >> /etc/fetchapply
 
 
 	echo -e "SHELL=/bin/sh\nPATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin\n${CRONTAB_ENTRY} root ${INSTALLATION_PATH}/fetchapply/fa 2>&1" > /etc/cron.d/fa

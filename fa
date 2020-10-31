@@ -1,12 +1,18 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
+source /etc/fetchapply
+source mo
+
+if [ "$fa_var_IGNORE_ERRORS" == "true" ]
+then
+	set -uo pipefail
+else
+	set -euo pipefail
+fi
+
 set -E
 
-
-source /etc/fetchapply
 cd ${fa_var_FA_ROOT}
-source mo
 
 
 fa_var_host=$(hostname)
@@ -588,7 +594,7 @@ then
 	then
 		if [ "$fa_var_force" == "No" ]
 		then
-			if [ "$fa_var_IGNORE_RUN_LOCKS" == "true" ]
+			if [ "$fa_var_IGNORE_ERRORS" == "true" ]
 			then
 				fa_func_log Warning "Ignoring the lock file..."
 			else
