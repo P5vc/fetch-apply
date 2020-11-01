@@ -163,7 +163,7 @@ fa_var_MAX_LOG_LENGTH=10000
 fa_var_AUTOMATIC_CLASS_ASSIGNMENT=true
 
 # Ignore errors (pause locks will be honored, but execution will not
-halt for run locks or after any command returns a non-zero exit code):
+# halt for run locks or after any command returns a non-zero exit code):
 fa_var_IGNORE_ERRORS=false
 ```
 
