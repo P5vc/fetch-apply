@@ -294,21 +294,60 @@ Initializers are created by adding a file with the desired commands to be run, t
 
 ### Modules
 
-Modules are pieces of code that have a specific task or job. Modules are generally related to a single program, and therefore are usually labeled with that program's name.
+Modules are collections of code that share a single, common purpose. Generally, a module will be designated a program or task, and then labeled accordingly. For example, you may have one module to handle firewall rules, another to update the system, and a third to configure a database. If the module will, for the most part, be working with a single program, then the convention is to label the module with that program's name. In this example, the modules may be named `ufw`, `apt`, and `postgresql`, respectively.
 
-Every (applicable) module is run once every 24 hours (unless you specify a different time period during installation). Therefore, it is important to design your modules with redundancy in mind. In other words, make sure that your modules are meant to be run more than once, and will not "break" anything by doing so. If you would only like code to be run once, use an initializer instead.
+Apart from initializers, modules are the only entity containing actual code/commands to be run on your system. By default (unless a different time interval is specified during installation), every (applicable) module is run once every 24 hours. Therefore, it is important to design your modules with redundancy in mind. In other words, make sure that your modules are meant to be run more than once, and will not "break" anything by doing so. If you would only like code to be run once, use an initializer instead.
 
-To create a module, make a new directory within the `modules` directory. The title of this directory will be the module's name. Within the new directory you just made, create the following, required file: `apply`.
+To create a module, make a new directory within your `modules` directory. The title of this directory will be the module's name. Within the new directory you just made, create the required `apply` file, and the optional `variables` file. When your module is to be run, Fetch Apply will load any module-specific variables from the `variables` file, and then run any code you've written in the `apply` file.
 
-It is recommended to also add a `variables` file, to contain any variables specific to the module. If no extra variables are needed, this file may be left blank or removed. The `apply` module must contain the code to run, in order for the module to be executed. You may create as many additional, supporting files as you wish (such as templates), within the same directory.
+Apart from the two, reserved files, you may create as many additional, supporting files and directories as you wish within the module's directory. Common supporting files include configuration file templates and custom code. Subdirectories are frequently used to isolate different versions of the same code, each crafted for a specific Operating System or version.
 
-Fetch Apply comes with `mo` by default. This allows you to use mustache-style templates with your modules. For information on how to format these templates, see the [mo documentation](https://github.com/tests-always-included/mo "mo documentation").
+Remember that the `apply` file is the "command center" for your module, and is the only file that Fetch Apply will run. If you use supporting files, they must be referenced or run from the `apply` file.
 
-To use a template, create a template file within the module's directory, then process and write that template within the apply file, as such: `mo moduleName.template > /desired/destination/moduleName.conf`. Note: there is no need to `source mo`.
+For example, if you have a Python script that you wish to run as part of the module, make sure to call it from `apply`:
+
+```bash
+python3 pythonScriptName.py
+```
+
+If you have logic to determine which subdirectory's code to run, it should also be done from within `apply`:
+
+```bash
+if [ "$(lsb_release -a | grep Release: | awk '{print $2}')" == "20.04" ]
+then
+    # Run the apply script specified under the Ubuntu 20.04 directory:
+    source ./Ubuntu20.04Subdirectory/apply
+elif [ "$(lsb_release -a | grep Release: | awk '{print $2}')" == "18.04" ]
+then
+    # Run the main script specified under the Ubuntu 18.04 directory:
+    python3 Ubuntu18.04Subdirectory/main.py
+else
+    # If no match found, run this default script:
+    source defaultApply
+    # Note: you could also use a variable instead of grabbing the release version, or you could grep for the description to get the OS instead of just the release number, etc.
+fi
+```
+
+If you're writing custom configuration files, they should also be done from within `apply`:
+
+```bash
+mo configFile.template > /etc/configuration
+```
+
+Note: Fetch Apply comes bundled with `mo` by default (and it is sourced automatically, so there is no need to `source mo` in your `apply` file). This allows you to use mustache-style templates with your modules, as demonstrated above. For information on how to format these templates, see the [mo documentation](https://github.com/tests-always-included/mo "mo documentation").
 
 ### Roles
 
-A role is a group of modules that work towards completing a specific goal, or share some sort of relation with one another. Roles are made by creating a file within the `roles` directory, and listing, one module per line, the name of each module that makes-up that role. The name of the created role is the name of the file containing its grouped modules.
+A role is a group of modules that frequently work together towards completing a general goal, or share some sort of relation with one another. Roles are made by creating a file within the `roles` directory, and listing, one module per line, the name of each module that makes-up that role. The name of the created role is the name of the file containing its grouped modules.
+
+For example, to create a "security" role, we would create a file named `security` within the `roles` directory, and then add all of our security-related modules to it, as such:
+
+```
+iptables
+sshd
+fail2ban
+motd
+```
 
 # Examples and Walk-Through
 
