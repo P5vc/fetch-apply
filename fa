@@ -21,9 +21,14 @@ fa_var_directories=""
 fa_var_pauseFile="${fa_var_FA_ROOT}/status/pause"
 fa_var_lockFile="${fa_var_FA_ROOT}/status/lock"
 
-fa_var_fetch="Yes"
 fa_var_force="No"
 fa_var_quiet="No"
+if [ "$fa_var_AUTOMATIC_FETCH" == "true" ]
+then
+	fa_var_fetch="Yes"
+else
+	fa_var_fetch="No"
+fi
 
 fa_var_cmd=""
 
@@ -140,7 +145,7 @@ function fa_func_gitFetch
 			timeout 300 git -C ${fa_var_FA_ROOT}/operations pull > /dev/null
 		else
 			fa_func_log Error "Operations checkout is dirty."
-			fa_func_log Info "Run with '--no-fetch' to bypass this check."
+			fa_func_log Info "Run with '--no-fetch' to bypass this check, or set fa_var_AUTOMATIC_FETCH=false\nin the Fetch Apply configuration file."
 			exit 1
 		fi
 	else
