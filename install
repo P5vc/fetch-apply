@@ -33,6 +33,8 @@ Options and Default Values:
         Show this help message
     --uninstall
         Uninstall Fetch Apply
+    --upgrade
+        Upgrade Fetch Apply to the latest version
     --installation-path=/var/lib
         Fetch Apply installation location
     --log-file-path=/var/log/fetchapply.log
@@ -88,8 +90,6 @@ function install()
 
 function uninstall()
 {
-	source /etc/fetchapply
-
 	rm -rf $fa_var_FA_ROOT
 	rm -f $fa_var_LOG_FILE_PATH
 	rm -f ${fa_var_LOG_FILE_PATH}.old
@@ -161,6 +161,58 @@ function interactive()
 }
 
 
+function upgrade()
+{
+	curl https://raw.githubusercontent.com/P5vc/FetchApply/master/iteration -o /tmp/iteration
+	source /tmp/iteration
+	rm -f /tmp/iteration
+
+	fa_var_NEW_COMPATIBLE_UPGRADE_ITERATION="$fa_var_COMPATIBLE_UPGRADE_ITERATION"
+
+	source fa_var_FA_ROOT/iteration
+
+	if [ "$fa_var_UPGRADE_ITERATION" -ge "$fa_var_NEW_COMPATIBLE_UPGRADE_ITERATION" ]
+	then
+		if [ "$fa_var_DISABLE_AUTOMATED_UPGRADES" == "No" ]
+		then
+			echo -e "${GREEN}Beginning Automated Upgrade...${NO_COLOR}"
+
+			echo -e "${PURPLE}Backing up files...${NO_COLOR}"
+			cp /etc/fetchapply /tmp/fetchapply
+			cp /etc/cron.d/fa /tmp/fa
+			cp ${fa_var_FA_ROOT}/status/completedInits /tmp/completedInits
+			cp $fa_var_LOG_FILE_PATH /tmp/fetchapply.log
+			cp ${fa_var_LOG_FILE_PATH}.old /tmp/fetchapply.log.old
+
+			echo -e "${PURPLE}Removing old Fetch Apply installation...${NO_COLOR}"
+			uninstall
+
+			echo -e "${PURPLE}Reinstalling Fetch Apply...${NO_COLOR}"
+			INSTALLATION_PATH="${fa_var_FA_ROOT::-11}"
+			OPERATIONS_GIT_URL="$(cat ${fa_var_FA_ROOT}/operations/.git/config | grep url | awk '{print $3}')"
+			LOG_FILE_PATH=$fa_var_LOG_FILE_PATH
+			install
+
+			echo -e "${PURPLE}Restoring backed-up files...${NO_COLOR}"
+			mv /tmp/fetchapply /etc/fetchapply
+			mv /tmp/fa /etc/cron.d/fa
+			mv /tmp/completedInits ${fa_var_FA_ROOT}/status/completedInits
+			mv /tmp/fetchapply.log $fa_var_LOG_FILE_PATH
+			mv /tmp/fetchapply.log.old ${fa_var_LOG_FILE_PATH}.old
+
+			echo -e "$(date)\tFetch Apply Successfully Upgraded" >> $fa_var_LOG_FILE_PATH
+			echo -e "${GREEN}Upgrade Complete!${NO_COLOR}"
+		else
+			echo -e "${YELLOW}Warning.\nYou have disabled automated upgrades within your Fetch Apply 'iteration' file.\nIf you wish to proceed, please set 'fa_var_DISABLE_AUTOMATED_UPGRADES=No'."
+			exit 0
+		fi
+	else
+		echo -e "${RED}Error. The Fetch Apply version currently installed on your system is\nincompatible with the latest version of Fetch Apply.\nTherefore, an automated upgrade cannot be performed."
+		exit 1
+	fi
+}
+
+
 if [ $# == 0 ]
 then
 	interactive
@@ -172,7 +224,13 @@ for argument in "$@"
 do
 	if [ "$argument" == "--uninstall" ]
 	then
+		source /etc/fetchapply
 		uninstall
+		exit 0
+	elif [ "$argument" == "--upgrade" ]
+	then
+		source /etc/fetchapply
+		upgrade
 		exit 0
 	elif [ "$argument" == "--help" ]
 	then
