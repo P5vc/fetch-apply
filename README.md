@@ -58,6 +58,8 @@ Options and Default Values:
         Show this help message
     --uninstall
         Uninstall Fetch Apply
+    --upgrade
+        Upgrade Fetch Apply to the latest version
     --installation-path=/var/lib
         Fetch Apply installation location
     --log-file-path=/var/log/fetchapply.log
@@ -77,6 +79,13 @@ A non-interactive installation example:
 curl https://raw.githubusercontent.com/P5vc/FetchApply/master/install -o /tmp/install
 sudo bash /tmp/install --operations-git-url=https://example.com/MyAccount/MyOperationsRepository.git --server-hostname=myServer
 sudo fa
+```
+
+To upgrade Fetch Apply, use the following commands:
+
+```bash
+curl https://raw.githubusercontent.com/P5vc/FetchApply/master/install -o /tmp/install
+sudo bash /tmp/install --upgrade
 ```
 
 To uninstall Fetch Apply, use the following commands:
