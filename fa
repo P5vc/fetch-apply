@@ -140,6 +140,20 @@ function fa_func_gitFetch
 {
 	if [ "$fa_var_fetch" == "Yes" ]
 	then
+		if [ "$fa_var_APPLY_ON_CHANGE" == "true" ]
+		then
+			fa_func_log Info "Looking for changes in remote operations repository..."
+			timeout 300 git -C ${fa_var_FA_ROOT}/operations remote update > /dev/null
+
+			if [ -z "$(git -C ${fa_var_FA_ROOT}/operations diff origin/master)" ]
+			then
+				fa_func_log Success "No changes detected. Exiting..."
+				exit 0
+			else
+				fa_func_log Info "Changes detected. Continuing..."
+			fi
+		fi
+
 		if [ -z "$(git -C ${fa_var_FA_ROOT}/operations status --porcelain)" ]
 		then
 			timeout 300 git -C ${fa_var_FA_ROOT}/operations pull > /dev/null

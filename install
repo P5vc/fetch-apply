@@ -78,6 +78,7 @@ function install()
 	echo -e "# Fetch Apply maximum log file size (in lines):\nfa_var_MAX_LOG_LENGTH=10000\n" >> /etc/fetchapply
 	echo -e "# Allow automatic class assignments:\nfa_var_AUTOMATIC_CLASS_ASSIGNMENT=true\n" >> /etc/fetchapply
 	echo -e "# Automatically pull from remote repository with each run:\nfa_var_AUTOMATIC_FETCH=true\n" >> /etc/fetchapply
+	echo -e "# Only apply modules after a change is detected in the remote operations repository:\nfa_var_APPLY_ON_CHANGE=false\n" >> /etc/fetchapply
 	echo -e "# Ignore errors (pause locks will be honored, but execution will not\n# halt for run locks or after any command returns a non-zero exit code):\nfa_var_IGNORE_ERRORS=false" >> /etc/fetchapply
 
 

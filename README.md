@@ -174,6 +174,9 @@ fa_var_AUTOMATIC_CLASS_ASSIGNMENT=true
 # Automatically pull from remote repository with each run:
 fa_var_AUTOMATIC_FETCH=true
 
+# Only apply modules after a change is detected in the remote operations repository:
+fa_var_APPLY_ON_CHANGE=false
+
 # Ignore errors (pause locks will be honored, but execution will not
 # halt for run locks or after any command returns a non-zero exit code):
 fa_var_IGNORE_ERRORS=false
