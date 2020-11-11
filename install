@@ -77,7 +77,6 @@ function install()
 	echo -e "# Fetch Apply log file path:\nfa_var_LOG_FILE_PATH=${LOG_FILE_PATH}\n" >> /etc/fetchapply
 	echo -e "# Fetch Apply maximum log file size (in lines):\nfa_var_MAX_LOG_LENGTH=10000\n" >> /etc/fetchapply
 	echo -e "# Allow automatic class assignments:\nfa_var_AUTOMATIC_CLASS_ASSIGNMENT=true\n" >> /etc/fetchapply
-	echo -e "# Allow automatic class assignments:\nfa_var_AUTOMATIC_CLASS_ASSIGNMENT=true\n" >> /etc/fetchapply
 	echo -e "# Automatically pull from remote repository with each run:\nfa_var_AUTOMATIC_FETCH=true\n" >> /etc/fetchapply
 	echo -e "# Ignore errors (pause locks will be honored, but execution will not\n# halt for run locks or after any command returns a non-zero exit code):\nfa_var_IGNORE_ERRORS=false" >> /etc/fetchapply
 
@@ -94,6 +93,7 @@ function uninstall()
 	rm -f $fa_var_LOG_FILE_PATH
 	rm -f ${fa_var_LOG_FILE_PATH}.old
 	rm /etc/cron.d/fa
+	rm -f /usr/bin/fa
 
 	echo -e "${GREEN}Fetch Apply successfully uninstalled.${NO_COLOR}"
 }
@@ -169,7 +169,7 @@ function upgrade()
 
 	fa_var_NEW_COMPATIBLE_UPGRADE_ITERATION="$fa_var_COMPATIBLE_UPGRADE_ITERATION"
 
-	source fa_var_FA_ROOT/iteration
+	source ${fa_var_FA_ROOT}/iteration
 
 	if [ "$fa_var_UPGRADE_ITERATION" -ge "$fa_var_NEW_COMPATIBLE_UPGRADE_ITERATION" ]
 	then
@@ -182,15 +182,19 @@ function upgrade()
 			cp /etc/cron.d/fa /tmp/fa
 			cp ${fa_var_FA_ROOT}/status/completedInits /tmp/completedInits
 			cp $fa_var_LOG_FILE_PATH /tmp/fetchapply.log
-			cp ${fa_var_LOG_FILE_PATH}.old /tmp/fetchapply.log.old
+			if [ -e "${fa_var_LOG_FILE_PATH}.old" ]
+			then
+				cp ${fa_var_LOG_FILE_PATH}.old /tmp/fetchapply.log.old
+			fi
+
+			INSTALLATION_PATH="${fa_var_FA_ROOT::-11}"
+			OPERATIONS_GIT_URL="$(cat ${fa_var_FA_ROOT}/operations/.git/config | grep url | awk '{print $3}')"
+			LOG_FILE_PATH=$fa_var_LOG_FILE_PATH
 
 			echo -e "${PURPLE}Removing old Fetch Apply installation...${NO_COLOR}"
 			uninstall
 
 			echo -e "${PURPLE}Reinstalling Fetch Apply...${NO_COLOR}"
-			INSTALLATION_PATH="${fa_var_FA_ROOT::-11}"
-			OPERATIONS_GIT_URL="$(cat ${fa_var_FA_ROOT}/operations/.git/config | grep url | awk '{print $3}')"
-			LOG_FILE_PATH=$fa_var_LOG_FILE_PATH
 			install
 
 			echo -e "${PURPLE}Restoring backed-up files...${NO_COLOR}"
@@ -198,7 +202,10 @@ function upgrade()
 			mv /tmp/fa /etc/cron.d/fa
 			mv /tmp/completedInits ${fa_var_FA_ROOT}/status/completedInits
 			mv /tmp/fetchapply.log $fa_var_LOG_FILE_PATH
-			mv /tmp/fetchapply.log.old ${fa_var_LOG_FILE_PATH}.old
+			if [ -e "/tmp/fetchapply.log.old" ]
+			then
+				mv /tmp/fetchapply.log.old ${fa_var_LOG_FILE_PATH}.old
+			fi
 
 			echo -e "$(date)\tFetch Apply Successfully Upgraded" >> $fa_var_LOG_FILE_PATH
 			echo -e "${GREEN}Upgrade Complete!${NO_COLOR}"
