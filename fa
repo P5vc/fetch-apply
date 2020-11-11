@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+cd ${fa_var_FA_ROOT}
+
 source /etc/fetchapply
 source mo
 
@@ -11,8 +13,6 @@ else
 fi
 
 set -E
-
-cd ${fa_var_FA_ROOT}
 
 
 fa_var_host=$(hostname)
