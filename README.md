@@ -190,7 +190,7 @@ fa_var_IGNORE_ERRORS=false
 
 # Learning the Framework
 
-Fetch Apply works by fetching the desired system configuration from a repository of your choosing (public or private), and then applying that configuration to the system on which Fetch Apply was installed.
+Fetch Apply works by fetching the desired system configuration from an "operations" repository of your choosing (public or private), and then applying that configuration to the system on which Fetch Apply is installed.
 
 ## Base Structure
 
