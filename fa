@@ -123,7 +123,7 @@ Options:
   --quieter                Suppress log messages
 
 Commands:
-  fetch                    Update local database by fetching from upstream
+  fetch                    Update local operations repository by fetching from upstream
   recover                  Reset run lock file after a failure
   pause                    Set the pause lock to avoid periodic runs while debugging
   resume                   Resume periodic runs after a pause
