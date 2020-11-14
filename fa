@@ -138,6 +138,8 @@ EOF
 
 function fa_func_gitFetch
 {
+	git -C ${fa_var_FA_ROOT}/operations checkout $fa_var_OPERATIONS_BRANCH > /dev/null
+
 	if [ "$fa_var_fetch" == "Yes" ]
 	then
 		if [ "$fa_var_APPLY_ON_CHANGE" == "true" ]

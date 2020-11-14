@@ -174,6 +174,9 @@ fa_var_LOG_FILE_PATH=/var/log/fetchapply.log
 # Fetch Apply maximum log file size (in lines):
 fa_var_MAX_LOG_LENGTH=10000
 
+# Operations repository branch to use:
+fa_var_OPERATIONS_BRANCH=master
+
 # Allow automatic class assignments:
 fa_var_AUTOMATIC_CLASS_ASSIGNMENT=true
 
