@@ -38,7 +38,7 @@ Fetch Apply is a simple system configuration and management framework designed f
 - Powered by Git
   - Fetch Apply is powered by git, allowing system admins (or anyone else, should you choose to use a public repository) to view a complete history of all configurations, changes, and code introduced into their systems, thus improving security and making troubleshooting easier than ever.
 - Agentless... ish
-  - Fetch Apply does not require some hefty installation process that involves setting up services, reworking permissions, adding new users, etc. Instead, it takes the form of a simple bash script run by periodically by cron. From there, it is your choice as to how "agentless" you would like Fetch Apply to be. You can have it poll a centralized server for new changes and updates consistently... or work quietly without even the need for an internet connection. Fetch Apply molds easily to fit your needs.
+  - Fetch Apply does not require some hefty installation process that involves setting up services, reworking permissions, adding new users, etc. Instead, it takes the form of a simple bash script run periodically by cron. From there, it is your choice as to how "agentless" you would like Fetch Apply to be. You can have it poll a centralized server for new changes and updates consistently... or work quietly without even the need for an internet connection. Fetch Apply molds easily to fit your needs.
 
 # Installation
 
