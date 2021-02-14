@@ -31,6 +31,7 @@ else
 fi
 
 fa_var_cmd=""
+fa_var_cmd_arg=""
 
 fa_var_initCompleted="No"
 
@@ -124,14 +125,15 @@ Options:
 
 Commands:
   fetch                    Update local operations repository by fetching from upstream
-  recover                  Reset run lock file after a failure
+  run <module name>        Run a specific module ad hoc (--force automatically set)
   pause                    Set the pause lock to avoid periodic runs while debugging
   resume                   Resume periodic runs after a pause
+  recover                  Reset run lock file after a failure
+  clear-inits              Allow completed initializers to run once more
   list-classes-to-run      List all classes applicable to the local system
   list-classes             List all classes
   list-modules             List all modules
   list-roles               List all roles
-  clear-inits              Allow completed initializers to run once more
 EOF
 }
 
@@ -507,6 +509,7 @@ do
 			fa_var_cmd="$fa_var_argument"
 		else
 			fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
+			exit 0
 		fi
 	elif [ "$fa_var_argument" == "recover" ]
 	then
@@ -515,6 +518,7 @@ do
 			fa_var_cmd="$fa_var_argument"
 		else
 			fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
+			exit 0
 		fi
 	elif [ "$fa_var_argument" == "pause" ]
 	then
@@ -523,6 +527,7 @@ do
 			fa_var_cmd="$fa_var_argument"
 		else
 			fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
+			exit 0
 		fi
 	elif [ "$fa_var_argument" == "resume" ]
 	then
@@ -531,6 +536,7 @@ do
 			fa_var_cmd="$fa_var_argument"
 		else
 			fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
+			exit 0
 		fi
 	elif [ "$fa_var_argument" == "list-classes-to-run" ]
 	then
@@ -539,6 +545,7 @@ do
 			fa_var_cmd="$fa_var_argument"
 		else
 			fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
+			exit 0
 		fi
 	elif [ "$fa_var_argument" == "list-classes" ]
 	then
@@ -547,6 +554,7 @@ do
 			fa_var_cmd="$fa_var_argument"
 		else
 			fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
+			exit 0
 		fi
 	elif [ "$fa_var_argument" == "list-modules" ]
 	then
@@ -555,6 +563,7 @@ do
 			fa_var_cmd="$fa_var_argument"
 		else
 			fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
+			exit 0
 		fi
 	elif [ "$fa_var_argument" == "list-roles" ]
 	then
@@ -563,6 +572,7 @@ do
 			fa_var_cmd="$fa_var_argument"
 		else
 			fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
+			exit 0
 		fi
 	elif [ "$fa_var_argument" == "clear-inits" ]
 	then
@@ -571,9 +581,31 @@ do
 			fa_var_cmd="$fa_var_argument"
 		else
 			fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
+			exit 0
+		fi
+	elif [ "$fa_var_argument" == "run" ]
+	then
+		if [ -z "$fa_var_cmd" ]
+		then
+			fa_var_cmd="$fa_var_argument"
+		else
+			fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
+			exit 0
 		fi
 	else
-		fa_func_log Error "'${fa_var_argument}' is not a recognized option or command.\nRun 'fa --help' for proper usage instructions."
+		if [ "$fa_var_cmd" == "run" ]
+		then
+			if [ -z "$fa_var_cmd_arg" ]
+			then
+				fa_var_cmd_arg="$fa_var_argument"
+			else
+				fa_func_log Error "Please only specify one module to run."
+				exit 0
+			fi
+		else
+			fa_func_log Error "'${fa_var_argument}' is not a recognized option or command.\nRun 'fa --help' for proper usage instructions."
+			exit 0
+		fi
 	fi
 done
 
@@ -609,6 +641,54 @@ elif [ "$fa_var_cmd" == "clear-inits" ]
 then
 	echo "" > ${fa_var_FA_ROOT}/status/completedInits
 	fa_func_log Success "Completed initializers cache successfully cleared..."
+elif [ "$fa_var_cmd" == "run" ]
+then
+	if [ -n "$fa_var_cmd_arg" ]
+	then
+		cd ${fa_var_FA_ROOT}
+
+		touch $fa_var_lockFile
+
+		fa_func_logTrim
+		fa_func_gitFetch
+
+		trap fa_func_handleError ERR
+		trap fa_func_handleExit EXIT
+
+		fa_func_log Info "Detecting applicable code..."
+		fa_func_identifyApplicableClasses
+
+		fa_func_log Info "Loading host-specific variables..."
+		fa_func_loadVariables
+
+		fa_var_moduleDirectory="${fa_var_FA_ROOT}/operations/modules/${fa_var_cmd_arg}"
+		if [ -e "${fa_var_moduleDirectory}" ]
+		then
+			cd $fa_var_moduleDirectory
+
+			fa_func_log Info "Applying module '${fa_var_cmd_arg}' ad hoc..."
+
+			if [ -e "variables" ]
+			then
+				source variables
+			fi
+
+			source apply 2>&1
+
+			fa_func_log Success "Module '${fa_var_cmd_arg}' successfully applied ad hoc..."
+		else
+			fa_func_log Error "The module '${fa_var_cmd_arg}' could not be found.\nExiting..."
+			exit 1
+		fi
+
+		rm $fa_var_lockFile
+
+		fa_func_log Success "All done."
+		exit 0
+	else
+		fa_func_log Error "Please specify a module to run."
+		exit 0
+	fi
 elif [ "$fa_var_cmd" == "" ]
 then
 	if [ -e "$fa_var_lockFile" ]

@@ -138,14 +138,15 @@ Options:
 
 Commands:
   fetch                    Update local operations repository by fetching from upstream
-  recover                  Reset run lock file after a failure
+  run <module name>        Run a specific module ad hoc (--force automatically set)
   pause                    Set the pause lock to avoid periodic runs while debugging
   resume                   Resume periodic runs after a pause
+  recover                  Reset run lock file after a failure
+  clear-inits              Allow completed initializers to run once more
   list-classes-to-run      List all classes applicable to the local system
   list-classes             List all classes
   list-modules             List all modules
   list-roles               List all roles
-  clear-inits              Allow completed initializers to run once more
 ```
 
 #### The full, Fetch Apply configuration file (with default values):
@@ -359,6 +360,14 @@ mo configFile.template > /etc/configuration
 ```
 
 Note: Fetch Apply comes bundled with `mo` by default (and it is sourced automatically, so there is no need to `source mo` in your `apply` file). This allows you to use mustache-style templates with your modules, as demonstrated above. For information on how to format these templates, see the [mo documentation](https://github.com/tests-always-included/mo "mo documentation").
+
+Modules can also be run ad hoc (on demand) by specifying the `run` command, followed by the module's name. For example, to run the `apt` module ad hoc, the following command would be used:
+
+```bash
+fa run apt
+```
+
+Please be careful when running modules ad hoc, as running a module ad hoc is seen as a "manual override", and rules that would normally regulate the eligibility of a module to be run, will be ignored.
 
 ## Roles
 
