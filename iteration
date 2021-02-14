@@ -1,5 +1,5 @@
 # The current upgrade iteration of Fetch Apply:
-fa_var_UPGRADE_ITERATION=2
+fa_var_UPGRADE_ITERATION=3
 
 # The oldest iteration of Fetch Apply compatible with an automated upgrade:
 fa_var_COMPATIBLE_UPGRADE_ITERATION=2
