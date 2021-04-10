@@ -130,6 +130,7 @@ Commands:
   resume                   Resume periodic runs after a pause
   recover                  Reset run lock file after a failure
   clear-inits              Allow completed initializers to run once more
+  reset                    Reset/clean operations repository to match the remote origin
   list-classes-to-run      List all classes applicable to the local system
   list-classes             List all classes
   list-modules             List all modules
@@ -583,6 +584,15 @@ do
 			fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
 			exit 0
 		fi
+	elif [ "$fa_var_argument" == "reset" ]
+	then
+		if [ -z "$fa_var_cmd" ]
+		then
+			fa_var_cmd="$fa_var_argument"
+		else
+			fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
+			exit 0
+		fi
 	elif [ "$fa_var_argument" == "run" ]
 	then
 		if [ -z "$fa_var_cmd" ]
@@ -641,6 +651,13 @@ elif [ "$fa_var_cmd" == "clear-inits" ]
 then
 	echo "" > ${fa_var_FA_ROOT}/status/completedInits
 	fa_func_log Success "Completed initializers cache successfully cleared..."
+elif [ "$fa_var_cmd" == "reset" ]
+then
+	cd ${fa_var_FA_ROOT}/operations
+	git fetch origin
+	git reset --hard origin
+	git clean -dfx
+	fa_func_log Success "Operations repository successfully reset..."
 elif [ "$fa_var_cmd" == "run" ]
 then
 	if [ -n "$fa_var_cmd_arg" ]
