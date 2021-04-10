@@ -143,6 +143,7 @@ Commands:
   resume                   Resume periodic runs after a pause
   recover                  Reset run lock file after a failure
   clear-inits              Allow completed initializers to run once more
+  reset                    Reset/clean operations repository to match the remote origin
   list-classes-to-run      List all classes applicable to the local system
   list-classes             List all classes
   list-modules             List all modules
