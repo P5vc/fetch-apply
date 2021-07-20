@@ -17,6 +17,7 @@ FA_GIT_URL="https://github.com/P5vc/FetchApply.git"
 INSTALLATION_PATH="/var/lib"
 LOG_FILE_PATH="/var/log/fetchapply.log"
 OPERATIONS_GIT_URL="https://github.com/P5vc/ServerConfigurations.git"
+OPERATIONS_GIT_BRANCH="main"
 SERVER_HOSTNAME="$(hostname)"
 CRONTAB_ENTRY="$(( RANDOM % 60 )) $(( RANDOM % 24 )) * * *"
 
@@ -43,6 +44,8 @@ Options and Default Values:
         Server hostname to use
     --operations-git-url=https://github.com/P5vc/ServerConfigurations.git
         URL to your operations (Fetch Apply configuration) repository
+    --operations-git-branch=main
+        Branch of your operations repository to use
     --crontab-entry="0 0 * * *"
         Crontab entry indicating how often to run Fetch Apply; the default is to run
         Fetch Apply at a random time (determined upon installation), once every 24 hours.
@@ -76,7 +79,7 @@ function install()
 	echo -e "# Fetch Apply installation location:\nfa_var_FA_ROOT=${INSTALLATION_PATH}/fetchapply\n" >> /etc/fetchapply
 	echo -e "# Fetch Apply log file path:\nfa_var_LOG_FILE_PATH=${LOG_FILE_PATH}\n" >> /etc/fetchapply
 	echo -e "# Fetch Apply maximum log file size (in lines):\nfa_var_MAX_LOG_LENGTH=10000\n" >> /etc/fetchapply
-	echo -e "# Operations repository branch to use:\nfa_var_OPERATIONS_BRANCH=master\n" >> /etc/fetchapply
+	echo -e "# Operations repository branch to use:\nfa_var_OPERATIONS_BRANCH=${OPERATIONS_GIT_BRANCH}\n" >> /etc/fetchapply
 	echo -e "# Allow automatic class assignments:\nfa_var_AUTOMATIC_CLASS_ASSIGNMENT=true\n" >> /etc/fetchapply
 	echo -e "# Automatically pull from remote repository with each run:\nfa_var_AUTOMATIC_FETCH=true\n" >> /etc/fetchapply
 	echo -e "# Only apply modules after a change is detected in the remote operations repository:\nfa_var_APPLY_ON_CHANGE=false\n" >> /etc/fetchapply
@@ -147,6 +150,13 @@ function interactive()
 		OPERATIONS_GIT_URL="https://github.com/P5vc/ServerConfigurations.git"
 	fi
 
+	echo -e "\n\n${BLUE}Which branch of your operations repository would you like to use?\n${CYAN}Branch (main):${NO_COLOR}"
+	read OPERATIONS_GIT_BRANCH
+	if [ -z "$OPERATIONS_GIT_BRANCH" ]
+	then
+		OPERATIONS_GIT_BRANCH="main"
+	fi
+
 	echo -e "\n\n${BLUE}What is the desired hostname for this server?\n${CYAN}Hostname (${SERVER_HOSTNAME}):${NO_COLOR}"
 	read SERVER_HOSTNAME_CHANGED
 	if [ -n "$SERVER_HOSTNAME_CHANGED" ]
@@ -165,7 +175,7 @@ function interactive()
 
 function upgrade()
 {
-	curl https://raw.githubusercontent.com/P5vc/FetchApply/master/iteration -o /tmp/iteration
+	curl https://raw.githubusercontent.com/P5vc/FetchApply/main/iteration -o /tmp/iteration
 	source /tmp/iteration
 	rm -f /tmp/iteration
 
@@ -254,6 +264,9 @@ do
 	elif [ "${argument:0:21}" == "--operations-git-url=" ]
 	then
 		OPERATIONS_GIT_URL="${argument:21}"
+	elif [ "${argument:0:24}" == "--operations-git-branch=" ]
+	then
+		OPERATIONS_GIT_BRANCH="${argument:24}"
 	elif [ "${argument:0:18}" == "--server-hostname=" ]
 	then
 		SERVER_HOSTNAME="${argument:18}"

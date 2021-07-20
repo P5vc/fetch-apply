@@ -45,7 +45,7 @@ Fetch Apply is a simple system configuration and management framework designed f
 To install Fetch Apply on your system, use the following commands (to download the installation script, then run it):
 
 ```bash
-curl https://raw.githubusercontent.com/P5vc/FetchApply/master/install -o /tmp/install
+curl https://raw.githubusercontent.com/P5vc/FetchApply/main/install -o /tmp/install
 sudo bash /tmp/install
 ```
 
@@ -72,6 +72,8 @@ Options and Default Values:
         Server hostname to use
     --operations-git-url=https://github.com/P5vc/ServerConfigurations.git
         URL to your operations (Fetch Apply configuration) repository
+    --operations-git-branch=main
+        Branch of your operations repository to use
     --crontab-entry="0 0 * * *"
         Crontab entry indicating how often to run Fetch Apply; the default is to run
         Fetch Apply at a random time (determined upon installation), once every 24 hours.
@@ -80,21 +82,21 @@ Options and Default Values:
 A non-interactive installation example:
 
 ```bash
-curl https://raw.githubusercontent.com/P5vc/FetchApply/master/install -o /tmp/install
+curl https://raw.githubusercontent.com/P5vc/FetchApply/main/install -o /tmp/install
 sudo bash /tmp/install --operations-git-url=https://example.com/MyAccount/MyOperationsRepository.git --server-hostname=myServer
 ```
 
 If you wish to perform an automated Fetch Apply upgrade, try the following commands:
 
 ```bash
-curl https://raw.githubusercontent.com/P5vc/FetchApply/master/install -o /tmp/install
+curl https://raw.githubusercontent.com/P5vc/FetchApply/main/install -o /tmp/install
 sudo bash /tmp/install --upgrade
 ```
 
 To uninstall Fetch Apply, use the following commands:
 
 ```bash
-curl https://raw.githubusercontent.com/P5vc/FetchApply/master/install -o /tmp/install
+curl https://raw.githubusercontent.com/P5vc/FetchApply/main/install -o /tmp/install
 sudo bash /tmp/install --uninstall
 ```
 
@@ -177,7 +179,7 @@ fa_var_LOG_FILE_PATH=/var/log/fetchapply.log
 fa_var_MAX_LOG_LENGTH=10000
 
 # Operations repository branch to use:
-fa_var_OPERATIONS_BRANCH=master
+fa_var_OPERATIONS_BRANCH=main
 
 # Allow automatic class assignments:
 fa_var_AUTOMATIC_CLASS_ASSIGNMENT=true
