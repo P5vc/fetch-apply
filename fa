@@ -150,7 +150,7 @@ function fa_func_gitFetch
 			fa_func_log Info "Looking for changes in remote operations repository..."
 			timeout 300 git -C ${fa_var_FA_ROOT}/operations remote update > /dev/null
 
-			if [ -z "$(git -C ${fa_var_FA_ROOT}/operations diff origin/master)" ]
+			if [ -z "$(git -C ${fa_var_FA_ROOT}/operations diff origin/${fa_var_OPERATIONS_BRANCH})" ]
 			then
 				fa_func_log Success "No changes detected. Exiting..."
 				exit 0
