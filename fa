@@ -141,7 +141,16 @@ EOF
 
 function fa_func_gitFetch
 {
-	git -C ${fa_var_FA_ROOT}/operations checkout $fa_var_OPERATIONS_BRANCH > /dev/null
+	if [ "$fa_var_OPERATIONS_BRANCH" != "$(git -C ${fa_var_FA_ROOT}/operations branch --show-current)" ]
+	then
+		fa_func_log Info "Switching the current branch from \"$(git -C ${fa_var_FA_ROOT}/operations branch --show-current)\" to \"${fa_var_OPERATIONS_BRANCH}\"..."
+		git -C ${fa_var_FA_ROOT}/operations checkout $fa_var_OPERATIONS_BRANCH
+		if [ "$fa_var_OPERATIONS_BRANCH" != "$(git -C ${fa_var_FA_ROOT}/operations branch --show-current)" ]
+		then
+			fa_func_log Error "Unable to switch to branch \"${fa_var_OPERATIONS_BRANCH}\". Does this branch exist?"
+			exit 1
+		fi
+	fi
 
 	if [ "$fa_var_fetch" == "Yes" ]
 	then
