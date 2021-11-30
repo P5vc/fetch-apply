@@ -341,11 +341,11 @@ python3 pythonScriptName.py
 If you have logic to determine which subdirectory's code to run, it should also be done from within `apply`:
 
 ```bash
-if [ "$(lsb_release -a | grep Release: | awk '{print $2}')" == "20.04" ]
+if [ "$(lsb_release -rs)" == "20.04" ]
 then
     # Run the apply script specified under the Ubuntu 20.04 directory:
     source ./Ubuntu20.04Subdirectory/apply
-elif [ "$(lsb_release -a | grep Release: | awk '{print $2}')" == "18.04" ]
+elif [ "$(lsb_release -rs)" == "18.04" ]
 then
     # Run the main script specified under the Ubuntu 18.04 directory:
     python3 Ubuntu18.04Subdirectory/main.py
