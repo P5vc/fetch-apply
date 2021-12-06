@@ -16,7 +16,7 @@ cd ${fa_var_FA_ROOT}
 
 
 fa_var_host=$(hostname)
-fa_var_directories=""
+fa_var_applicableDirectories=""
 
 fa_var_pauseFile="${fa_var_FA_ROOT}/status/pause"
 fa_var_lockFile="${fa_var_FA_ROOT}/status/lock"
@@ -38,6 +38,8 @@ fa_var_initCompleted="No"
 
 function fa_func_log
 {
+	local fa_var_RED fa_var_YELLOW fa_var_CYAN fa_var_GREEN fa_var_NO_COLOR fa_var_color
+
 	fa_var_RED="\033[0;31m"
 	fa_var_YELLOW="\033[0;33m"
 	fa_var_CYAN="\033[0;36m"
@@ -157,7 +159,7 @@ function fa_func_gitFetch
 		if [ "$fa_var_APPLY_ON_CHANGE" == "true" ]
 		then
 			fa_func_log Info "Looking for changes in remote operations repository..."
-			timeout 300 git -C ${fa_var_FA_ROOT}/operations remote update > /dev/null
+			timeout 600 git -C ${fa_var_FA_ROOT}/operations remote update > /dev/null
 
 			if [ -z "$(git -C ${fa_var_FA_ROOT}/operations diff origin/${fa_var_OPERATIONS_BRANCH})" ]
 			then
@@ -170,7 +172,7 @@ function fa_func_gitFetch
 
 		if [ -z "$(git -C ${fa_var_FA_ROOT}/operations status --porcelain)" ]
 		then
-			timeout 300 git -C ${fa_var_FA_ROOT}/operations pull > /dev/null
+			timeout 600 git -C ${fa_var_FA_ROOT}/operations pull > /dev/null
 		else
 			fa_func_log Error "Operations checkout is dirty."
 			fa_func_log Info "Run with '--no-fetch' to bypass this check, or set fa_var_AUTOMATIC_FETCH=false\nin the Fetch Apply configuration file."
@@ -184,39 +186,40 @@ function fa_func_gitFetch
 
 function fa_func_identifyApplicableClasses
 {
-	for fa_var_line in ""$(ls -1 ${fa_var_FA_ROOT}/operations/classes | tr '\n' ' ')""
-	do fa_var_line="$(echo $fa_var_line | tr -d '[:space:]')"
+	local fa_var_class fa_var_manually_set fa_var_assignedHost
 
-		if [ -z "$fa_var_line" ]
+	for fa_var_class in ""$(ls -1 ${fa_var_FA_ROOT}/operations/classes | tr '\n' ' ')""
+	do fa_var_class="$(echo $fa_var_class | tr -d '[:space:]')"
+
+		if [ -z "$fa_var_class" ]
 		then
 			continue
 		fi
 
 		# Handle manual assignments:
-		if [ -e "${fa_var_FA_ROOT}/operations/classes/${fa_var_line}/assignments" ]
+		if [ -e "${fa_var_FA_ROOT}/operations/classes/${fa_var_class}/assignments" ]
 		then
 			fa_var_manually_set=false
 
-			for fa_var_line2 in ""$(cat ${fa_var_FA_ROOT}/operations/classes/${fa_var_line}/assignments | tr '\n' ' ')""
-			do fa_var_line2="$(echo $fa_var_line2 | tr -d '[:space:]')"
+			for fa_var_assignedHost in ""$(cat ${fa_var_FA_ROOT}/operations/classes/${fa_var_class}/assignments | tr '\n' ' ')""
+			do fa_var_assignedHost="$(echo $fa_var_assignedHost | tr -d '[:space:]')"
 
-				if [ -z "$fa_var_line2" ]
+				if [ -z "$fa_var_assignedHost" ]
 				then
 					continue
 				fi
 
-				if [ "$fa_var_line2" == "$fa_var_host" ]
+				if [ "$fa_var_assignedHost" == "$fa_var_host" ]
 				then
-					fa_func_log Success "The class '${fa_var_line}' was manually assigned to this host..."
+					fa_func_log Success "The class '${fa_var_class}' was manually assigned to this host..."
+					fa_var_applicableDirectories="${fa_var_applicableDirectories}${fa_var_FA_ROOT}/operations/classes/${fa_var_class} "
 					fa_var_manually_set=true
 
 					# Check for a host directory within the assigned class:
-					if [ -e "${fa_var_FA_ROOT}/operations/classes/${fa_var_line}/${fa_var_host}" ]
+					if [ -e "${fa_var_FA_ROOT}/operations/classes/${fa_var_class}/${fa_var_host}" ]
 					then
-						fa_func_log Success "A specific host directory was identified within the '${fa_var_line}' class..."
-						fa_var_directories="${fa_var_directories}${fa_var_FA_ROOT}/operations/classes/${fa_var_line}/${fa_var_host} "
-					else
-						fa_var_directories="${fa_var_directories}${fa_var_FA_ROOT}/operations/classes/${fa_var_line} "
+						fa_func_log Success "A specific host directory was identified within the '${fa_var_class}' class..."
+						fa_var_applicableDirectories="${fa_var_applicableDirectories}${fa_var_FA_ROOT}/operations/classes/${fa_var_class}/${fa_var_host} "
 					fi
 				fi
 			done
@@ -230,22 +233,21 @@ function fa_func_identifyApplicableClasses
 		# Handle automatic assignments:
 		if [ "$fa_var_AUTOMATIC_CLASS_ASSIGNMENT" == "true" ]
 		then
-			if [ -n "$(echo $fa_var_host | grep "$fa_var_line")" ]
+			if [ -n "$(echo $fa_var_host | grep "$fa_var_class")" ]
 			then
-				fa_func_log Success "A match was found with the class '${fa_var_line}'..."
+				fa_func_log Success "A match was found with the class '${fa_var_class}'..."
+				fa_var_applicableDirectories="${fa_var_applicableDirectories}${fa_var_FA_ROOT}/operations/classes/${fa_var_class} "
 
-				if [ -e "${fa_var_FA_ROOT}/operations/classes/${fa_var_line}/${fa_var_host}" ]
+				if [ -e "${fa_var_FA_ROOT}/operations/classes/${fa_var_class}/${fa_var_host}" ]
 				then
-					fa_func_log Success "A specific host directory was identified within the '${fa_var_line}' class..."
-					fa_var_directories="${fa_var_directories}${fa_var_FA_ROOT}/operations/classes/${fa_var_line}/${fa_var_host} "
-				else
-					fa_var_directories="${fa_var_directories}${fa_var_FA_ROOT}/operations/classes/${fa_var_line} "
+					fa_func_log Success "A specific host directory was identified within the '${fa_var_class}' class..."
+					fa_var_applicableDirectories="${fa_var_applicableDirectories}${fa_var_FA_ROOT}/operations/classes/${fa_var_class}/${fa_var_host} "
 				fi
 			fi
 		fi
 	done
 
-	if [ -z "$fa_var_directories" ]
+	if [ -z "$fa_var_applicableDirectories" ]
 	then
 		fa_func_log Warning "No applicable classes found for this server.\nExiting..."
 		exit 0
@@ -255,9 +257,11 @@ function fa_func_identifyApplicableClasses
 
 function fa_func_loadVariables
 {
+	local fa_var_directory
+
 	source ${fa_var_FA_ROOT}/operations/variables
 
-	for fa_var_directory in $fa_var_directories
+	for fa_var_directory in $fa_var_applicableDirectories
 	do fa_var_directory="$(echo $fa_var_directory | tr -d '[:space:]')"
 
 		if [ -z "$fa_var_directory" ]
@@ -269,16 +273,6 @@ function fa_func_loadVariables
 		then
 			source ${fa_var_directory}/variables
 		fi
-
-		# Check if this is a host or class directory:
-		if [ -n "$(echo "$fa_var_directory" | grep -E "classes/[[:alnum:]:;\"\'\`|~,><.?_+=\!@#\$%^&*()\-]{1,}/$(basename $fa_var_directory)$")" ]
-		then
-			# This is a host directory
-			if [ -e "${fa_var_directory}/../variables" ]
-			then
-				source ${fa_var_directory}/../variables
-			fi
-		fi
 	done
 
 	fa_func_log Success "Host-specific base variables loaded..."
@@ -287,49 +281,52 @@ function fa_func_loadVariables
 
 function fa_func_initializers
 {
-	fa_var_initFileToUse=""
+	local fa_var_directoryFullPath fa_var_initializerName fa_var_initCompleted fa_var_completedInitializerName
 
-	for fa_var_line in $fa_var_directories
-	do fa_var_line="$(echo $fa_var_line | tr -d '[:space:]')"
+	for fa_var_directoryFullPath in $fa_var_applicableDirectories
+	do fa_var_directoryFullPath="$(echo $fa_var_directoryFullPath | tr -d '[:space:]')"
 
-		if [ -z "$fa_var_line" ]
+		if [ -z "$fa_var_directoryFullPath" ]
 		then
 			continue
 		fi
 
-		fa_var_initFileToUse="${fa_var_line}/initializers"
 
 		# Check if this is a host or class directory:
-		if [ -n "$(echo "$fa_var_line" | grep -E "classes/[[:alnum:]:;\"\'\`|~,><.?_+=\!@#\$%^&*()\-]{1,}/$(basename $fa_var_line)$")" ]
+		fa_var_parentDirectoryFullPath="$(cd ${fa_var_directoryFullPath}/../ ; pwd)"
+		if [ "$(basename $fa_var_parentDirectoryFullPath)" == "classes" ]
 		then
-			# This is a host directory
-			if [ ! -e "${fa_var_line}/initializers" ]
+			# This is a class directory; check if an overriding host directory initializers file exists:
+			if [ -e "${fa_var_directoryFullPath}/${fa_var_host}/override" ] && [ -e "${fa_var_directoryFullPath}/${fa_var_host}/initializers" ]
 			then
-				fa_var_initFileToUse="${fa_var_line}/../initializers"
+				# Overriding initializers exist, so skip execution of these initializers:
+				fa_func_log Info "The '$(basename ${fa_var_directoryFullPath})' class initializers are being overridden by host-specific initializers, and will therefore be skipped..."
+				continue
 			fi
 		fi
 
-		for fa_var_line2 in ""$(cat $fa_var_initFileToUse | tr '\n' ' ')""
-		do fa_var_line2="$(echo $fa_var_line2 | tr -d '[:space:]')"
 
-			if [ -z "$fa_var_line2" ]
+		for fa_var_initializerName in ""$(cat ${fa_var_directoryFullPath}/initializers | tr '\n' ' ')""
+		do fa_var_initializerName="$(echo $fa_var_initializerName | tr -d '[:space:]')"
+
+			if [ -z "$fa_var_initializerName" ]
 			then
 				continue
 			fi
 
+			# Don't run the initializer if it has already been run:
 			fa_var_initCompleted="No"
+			for fa_var_completedInitializerName in ""$(cat ${fa_var_FA_ROOT}/status/completedInits | tr '\n' ' ')""
+			do fa_var_completedInitializerName="$(echo $fa_var_completedInitializerName | tr -d '[:space:]')"
 
-			for fa_var_line3 in ""$(cat ${fa_var_FA_ROOT}/status/completedInits | tr '\n' ' ')""
-			do fa_var_line3="$(echo $fa_var_line3 | tr -d '[:space:]')"
-
-				if [ -z "$fa_var_line3" ]
+				if [ -z "$fa_var_completedInitializerName" ]
 				then
 					continue
 				fi
 
-				if [ "$fa_var_line2" == "$fa_var_line3" ]
+				if [ "$fa_var_initializerName" == "$fa_var_completedInitializerName" ]
 				then
-					fa_func_log Info "The '${fa_var_line2}' initializer has already been completed, and will be skipped..."
+					fa_func_log Info "The '${fa_var_initializerName}' initializer has already been completed, and will be skipped..."
 					fa_var_initCompleted="Yes"
 					break
 				fi
@@ -337,18 +334,18 @@ function fa_func_initializers
 
 			if [ "$fa_var_initCompleted" == "No" ]
 			then
-				fa_func_log Info "Executing the '${fa_var_line2}' initializer..."
-				echo "$fa_var_line2" >> ${fa_var_FA_ROOT}/status/completedInits
+				fa_func_log Info "Executing the '${fa_var_initializerName}' initializer..."
+				echo "$fa_var_initializerName" >> ${fa_var_FA_ROOT}/status/completedInits
 
-				if [ -e "${fa_var_FA_ROOT}/operations/initializers/${fa_var_line2}" ]
+				if [ -e "${fa_var_FA_ROOT}/operations/initializers/${fa_var_initializerName}" ]
 				then
-					source ${fa_var_FA_ROOT}/operations/initializers/${fa_var_line2} 2>&1
+					source ${fa_var_FA_ROOT}/operations/initializers/${fa_var_initializerName} 2>&1
 				else
-					fa_func_log Error "The initializer '${fa_var_line2}' could not be found.\nExiting..."
+					fa_func_log Error "The initializer '${fa_var_initializerName}' could not be found.\nExiting..."
 					exit 1
 				fi
 
-			fa_func_log Success "Initializer (${fa_var_line}) successfully executed..."
+			fa_func_log Success "Initializer (${fa_var_directoryFullPath}) successfully executed..."
 
 			fi
 		done
@@ -358,58 +355,61 @@ function fa_func_initializers
 
 function fa_func_roles
 {
-	fa_var_rolesFileToUse=""
+	local fa_var_directoryFullPath fa_var_parentDirectoryFullPath fa_var_role fa_var_module fa_var_moduleDirectory
 
-	for fa_var_line in $fa_var_directories
-	do fa_var_line="$(echo $fa_var_line | tr -d '[:space:]')"
+	for fa_var_directoryFullPath in $fa_var_applicableDirectories
+	do fa_var_directoryFullPath="$(echo $fa_var_directoryFullPath | tr -d '[:space:]')"
 
-		if [ -z "$fa_var_line" ]
+		if [ -z "$fa_var_directoryFullPath" ]
 		then
 			continue
 		fi
 
-		fa_var_rolesFileToUse="${fa_var_line}/roles"
 
 		# Check if this is a host or class directory:
-		if [ -n "$(echo "$fa_var_line" | grep -E "classes/[[:alnum:]:;\"\'\`|~,><.?_+=\!@#\$%^&*()\-]{1,}/$(basename $fa_var_line)$")" ]
+		fa_var_parentDirectoryFullPath="$(cd ${fa_var_directoryFullPath}/../ ; pwd)"
+		if [ "$(basename $fa_var_parentDirectoryFullPath)" == "classes" ]
 		then
-			# This is a host directory
-			if [ ! -e "${fa_var_line}/roles" ]
+			# This is a class directory; check if an overriding host directory roles file exists:
+			if [ -e "${fa_var_directoryFullPath}/${fa_var_host}/override" ] && [ -e "${fa_var_directoryFullPath}/${fa_var_host}/roles" ]
 			then
-				fa_var_rolesFileToUse="${fa_var_line}/../roles"
+				# Overriding roles exist, so skip execution of these roles:
+				fa_func_log Info "The '$(basename ${fa_var_directoryFullPath})' class roles are being overridden by host-specific roles, and will therefore be skipped..."
+				continue
 			fi
 		fi
 
-		for fa_var_line2 in ""$(cat $fa_var_rolesFileToUse | tr '\n' ' ')""
-		do fa_var_line2="$(echo $fa_var_line2 | tr -d '[:space:]')"
 
-			if [ -z "$fa_var_line2" ]
+		for fa_var_role in ""$(cat ${fa_var_directoryFullPath}/roles | tr '\n' ' ')""
+		do fa_var_role="$(echo $fa_var_role | tr -d '[:space:]')"
+
+			if [ -z "$fa_var_role" ]
 			then
 				continue
 			fi
 
-			if [ -e ${fa_var_FA_ROOT}/operations/roles/${fa_var_line2} ]
+			if [ -e ${fa_var_FA_ROOT}/operations/roles/${fa_var_role} ]
 			then
-				fa_func_log Info "Applying role '${fa_var_line2}'..."
+				fa_func_log Info "Applying role '${fa_var_role}'..."
 
-				for fa_var_line3 in ""$(cat ${fa_var_FA_ROOT}/operations/roles/${fa_var_line2} | tr '\n' ' ')""
-				do fa_var_line3="$(echo $fa_var_line3 | tr -d '[:space:]')"
+				for fa_var_module in ""$(cat ${fa_var_FA_ROOT}/operations/roles/${fa_var_role} | tr '\n' ' ')""
+				do fa_var_module="$(echo $fa_var_module | tr -d '[:space:]')"
 
-					if [ -z "$fa_var_line3" ]
+					if [ -z "$fa_var_module" ]
 					then
 						continue
 					fi
 
-					fa_var_moduleDirectory="${fa_var_FA_ROOT}/operations/modules/${fa_var_line3}"
+					fa_var_moduleDirectory="${fa_var_FA_ROOT}/operations/modules/${fa_var_module}"
 					if [ ! -e "${fa_var_moduleDirectory}" ]
 					then
-						fa_func_log Error "The module '${fa_var_line3}' could not be found.\nExiting..."
+						fa_func_log Error "The module '${fa_var_module}' could not be found.\nExiting..."
 						exit 1
 					fi
 
 					cd $fa_var_moduleDirectory
 
-					fa_func_log Info "Applying module '${fa_var_line3}'..."
+					fa_func_log Info "Applying module '${fa_var_module}'..."
 
 					if [ -e "variables" ]
 					then
@@ -418,15 +418,17 @@ function fa_func_roles
 
 					source apply 2>&1
 
-					fa_func_log Success "Module '${fa_var_line3}' successfully applied..."
+					fa_func_log Success "Module '${fa_var_module}' successfully applied..."
 
 					# Replace any module-specific variables that may have been set:
 					fa_func_loadVariables
 
 					cd ${fa_var_FA_ROOT}
 				done
+
+				fa_func_log Success "Role '${fa_var_role}' successfully applied..."
 			else
-				fa_func_log Error "The role '${fa_var_line2}' could not be found.\nExiting..."
+				fa_func_log Error "The role '${fa_var_role}' could not be found.\nExiting..."
 				exit 1
 			fi
 		done
@@ -436,46 +438,49 @@ function fa_func_roles
 
 function fa_func_modules
 {
-	fa_var_modulesFileToUse=""
+	local fa_var_directoryFullPath fa_var_parentDirectoryFullPath fa_var_module fa_var_moduleDirectory
 
-	for fa_var_line in $fa_var_directories
-	do fa_var_line="$(echo $fa_var_line | tr -d '[:space:]')"
+	for fa_var_directoryFullPath in $fa_var_applicableDirectories
+	do fa_var_directoryFullPath="$(echo $fa_var_directoryFullPath | tr -d '[:space:]')"
 
-		if [ -z "$fa_var_line" ]
+		if [ -z "$fa_var_directoryFullPath" ]
 		then
 			continue
 		fi
 
-		fa_var_modulesFileToUse="${fa_var_line}/modules"
 
 		# Check if this is a host or class directory:
-		if [ -n "$(echo "$fa_var_line" | grep -E "classes/[[:alnum:]:;\"\'\`|~,><.?_+=\!@#\$%^&*()\-]{1,}/$(basename $fa_var_line)$")" ]
+		fa_var_parentDirectoryFullPath="$(cd ${fa_var_directoryFullPath}/../ ; pwd)"
+		if [ "$(basename $fa_var_parentDirectoryFullPath)" == "classes" ]
 		then
-			# This is a host directory
-			if [ ! -e "${fa_var_line}/modules" ]
+			# This is a class directory; check if an overriding host directory modules file exists:
+			if [ -e "${fa_var_directoryFullPath}/${fa_var_host}/override" ] && [ -e "${fa_var_directoryFullPath}/${fa_var_host}/modules" ]
 			then
-				fa_var_modulesFileToUse="${fa_var_line}/../modules"
+				# Overriding modules exist, so skip execution of these modules:
+				fa_func_log Info "The '$(basename ${fa_var_directoryFullPath})' class modules are being overridden by host-specific modules, and will therefore be skipped..."
+				continue
 			fi
 		fi
 
-		for fa_var_line2 in ""$(cat $fa_var_modulesFileToUse | tr '\n' ' ')""
-		do fa_var_line2="$(echo $fa_var_line2 | tr -d '[:space:]')"
 
-			if [ -z "$fa_var_line2" ]
+		for fa_var_module in ""$(cat ${fa_var_directoryFullPath}/modules | tr '\n' ' ')""
+		do fa_var_module="$(echo $fa_var_module | tr -d '[:space:]')"
+
+			if [ -z "$fa_var_module" ]
 			then
 				continue
 			fi
 
-			fa_var_moduleDirectory="${fa_var_FA_ROOT}/operations/modules/${fa_var_line2}"
+			fa_var_moduleDirectory="${fa_var_FA_ROOT}/operations/modules/${fa_var_module}"
 			if [ ! -e "${fa_var_moduleDirectory}" ]
 			then
-				fa_func_log Error "The module '${fa_var_line2}' could not be found.\nExiting..."
+				fa_func_log Error "The module '${fa_var_module}' could not be found.\nExiting..."
 				exit 1
 			fi
 
 			cd $fa_var_moduleDirectory
 
-			fa_func_log Info "Applying module '${fa_var_line2}'..."
+			fa_func_log Info "Applying module '${fa_var_module}'..."
 
 			if [ -e "variables" ]
 			then
@@ -484,7 +489,7 @@ function fa_func_modules
 
 			source apply 2>&1
 
-			fa_func_log Success "Module '${fa_var_line2}' successfully applied..."
+			fa_func_log Success "Module '${fa_var_module}' successfully applied..."
 
 			# Replace any module-specific variables that may have been set:
 			fa_func_loadVariables

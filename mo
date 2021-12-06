@@ -25,6 +25,7 @@
 #/          This message.
 #/    -s=FILE, --source=FILE
 #/          Load FILE into the environment before processing templates.
+#/          Can be used multiple times.
 #
 # Mo is under a MIT style licence with an additional non-advertising clause.
 # See LICENSE.md for the full text.
@@ -71,6 +72,7 @@
 #     -s=FILE, --source=FILE
 #
 # Source a file into the environment before processing template files.
+# This can be used multiple times.
 #
 #     --
 #
@@ -300,7 +302,7 @@ moFindEndTag() {
 moFindString() {
     local pos string
 
-    string=${2%%$3*}
+    string=${2%%"$3"*}
     [[ "$string" == "$2" ]] && pos=-1 || pos=${#string}
     local "$1" && moIndirect "$1" "$pos"
 }
@@ -1094,7 +1096,7 @@ moUsage() {
 
 
 # Save the original command's path for usage later
-#MO_ORIGINAL_COMMAND="$(cd "${BASH_SOURCE[0]%/*}" || exit 1; pwd)/${BASH_SOURCE[0]##*/}"
+MO_ORIGINAL_COMMAND="$(cd "${BASH_SOURCE[0]%/*}" || exit 1; pwd)/${BASH_SOURCE[0]##*/}"
 MO_VERSION="2.2.0"
 
 # If sourced, load all functions.
