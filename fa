@@ -303,6 +303,13 @@ function fa_func_initializers
 				fa_func_log Info "The '$(basename ${fa_var_directoryFullPath})' class initializers are being overridden by host-specific initializers, and will therefore be skipped..."
 				continue
 			fi
+		else
+			# This is a host directory; skip initializer execution if a host-specific initializers file doesn't exists:
+			if [ ! -e "${fa_var_directoryFullPath}/initializers" ]
+			then
+				fa_func_log Info "No host-specific initializers found for '${fa_var_host}'. Moving on..."
+				continue
+			fi
 		fi
 
 
@@ -375,6 +382,13 @@ function fa_func_roles
 			then
 				# Overriding roles exist, so skip execution of these roles:
 				fa_func_log Info "The '$(basename ${fa_var_directoryFullPath})' class roles are being overridden by host-specific roles, and will therefore be skipped..."
+				continue
+			fi
+		else
+			# This is a host directory; skip module execution if a host-specific roles file doesn't exists:
+			if [ ! -e "${fa_var_directoryFullPath}/roles" ]
+			then
+				fa_func_log Info "No host-specific roles found for '${fa_var_host}'. Moving on..."
 				continue
 			fi
 		fi
@@ -458,6 +472,13 @@ function fa_func_modules
 			then
 				# Overriding modules exist, so skip execution of these modules:
 				fa_func_log Info "The '$(basename ${fa_var_directoryFullPath})' class modules are being overridden by host-specific modules, and will therefore be skipped..."
+				continue
+			fi
+		else
+			# This is a host directory; skip module execution if a host-specific modules file doesn't exists:
+			if [ ! -e "${fa_var_directoryFullPath}/modules" ]
+			then
+				fa_func_log Info "No host-specific modules found for '${fa_var_host}'. Moving on..."
 				continue
 			fi
 		fi
