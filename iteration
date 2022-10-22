@@ -1,16 +1,16 @@
 # The current upgrade iteration of Fetch Apply:
-fa_var_UPGRADE_ITERATION=8
+fa_var_UPGRADE_ITERATION=9
 
 # The oldest iteration of Fetch Apply compatible with an automated upgrade:
-fa_var_COMPATIBLE_UPGRADE_ITERATION=2
+fa_var_COMPATIBLE_UPGRADE_ITERATION=9
 
 # Manually disable automated upgrades (change to "YES"):
 fa_var_DISABLE_AUTOMATED_UPGRADES="No"
 
 
 # Files to be preserved for this upgrade iteration:
-# /etc/fetchapply
+# /etc/fetch-apply
 # /etc/cron.d/fa
-# {fa_var_FA_ROOT}/status/completedInits
+# {fa_var_FA_ROOT}/status/completed-initializers
 # {fa_var_LOG_FILE_PATH}
 # {fa_var_LOG_FILE_PATH}.old

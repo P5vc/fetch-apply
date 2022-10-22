@@ -12,14 +12,33 @@ PURPLE="\033[0;35m"
 NO_COLOR="\033[0m"
 
 
-FA_GIT_URL="https://github.com/P5vc/FetchApply.git"
+FA_REPOSITORY_URL="https://git.p5.vc/Priveasy/fetch-apply.git"
 
 INSTALLATION_PATH="/var/lib"
-LOG_FILE_PATH="/var/log/fetchapply.log"
-OPERATIONS_GIT_URL="https://github.com/P5vc/ServerConfigurations.git"
-OPERATIONS_GIT_BRANCH="main"
-SERVER_HOSTNAME="$(hostname)"
+LOG_FILE_PATH="/var/log/fetch-apply.log"
+OPERATIONS_REPOSITORY_URL="https://git.p5.vc/Priveasy/server-configurations.git"
+OPERATIONS_REPOSITORY_BRANCH="main"
+DEVICE_HOSTNAME="$(hostname)"
 CRONTAB_ENTRY="$(( RANDOM % 60 )) $(( RANDOM % 24 )) * * *"
+
+OS="$(uname -s)"
+PACKAGE_MANAGER="apt-get"
+if [ "$OS" == "Linux" ]
+then
+    if [ -n "$(command -v apt-get)" ]
+    then
+        PACKAGE_MANAGER="apt-get"
+    elif [ -n "$(command -v yum)" ]
+    then
+        PACKAGE_MANAGER="yum"
+    elif [ -n "$(command -v dnf)" ]
+    then
+        PACKAGE_MANAGER="dnf"
+    fi
+elif [ "$OS" == "Darwin" ]
+then
+    PACKAGE_MANAGER="brew"
+fi
 
 function usage()
 {
@@ -38,246 +57,276 @@ Options and Default Values:
         Upgrade Fetch Apply to the latest version
     --installation-path=/var/lib
         Fetch Apply installation location
-    --log-file-path=/var/log/fetchapply.log
+    --log-file-path=/var/log/fetch-apply.log
         Fetch Apply log location
-    --server-hostname=${SERVER_HOSTNAME}
-        Server hostname to use
-    --operations-git-url=https://github.com/P5vc/ServerConfigurations.git
+    --device-hostname=${DEVICE_HOSTNAME}
+        Hostname to use
+    --operations-repository-url=https://git.p5.vc/Priveasy/server-configurations.git
         URL to your operations (Fetch Apply configuration) repository
-    --operations-git-branch=main
-        Branch of your operations repository to use
+    --operations-repository-branch=main
+        Branch of the operations repository to use
     --crontab-entry="0 0 * * *"
         Crontab entry indicating how often to run Fetch Apply; the default is to run
-        Fetch Apply at a random time (determined upon installation), once every 24 hours.
+        Fetch Apply once every 24 hours, at a random time generated during installation
 EOF
 }
 
 function install()
 {
-	if [ -z "$(/usr/bin/which git)" ]
-	then
-		echo -e "\n\n${YELLOW}Warning: git was not detected.\nAttempting to install git...${PURPLE}"
-		apt-get update
-		apt-get install git -y
-		echo -e "${NO_COLOR}"
-	else
-		echo -e "\n\n${GREEN}Git detected...${NO_COLOR}"
-	fi
+    if [ -z "$(command -v git)" ]
+    then
+        echo -e "\n\n${YELLOW}Warning: git was not detected.\nAttempting to install git...${PURPLE}"
 
-	echo -e "\n\n${GREEN}Beginning installation...${PURPLE}"
+        $PACKAGE_MANAGER update
+        if [ "$PACKAGE_MANAGER" == "brew" ]
+        then
+            $PACKAGE_MANAGER install git
+        else
+            $PACKAGE_MANAGER install git -y
+        fi
 
-	hostnamectl set-hostname $SERVER_HOSTNAME
+        echo -e "${NO_COLOR}"
+    else
+        echo -e "\n\n${GREEN}Git detected...${NO_COLOR}"
+    fi
 
-	mkdir -p ${INSTALLATION_PATH}/fetchapply
-	git clone $FA_GIT_URL ${INSTALLATION_PATH}/fetchapply
-	ln -sf ${INSTALLATION_PATH}/fetchapply/fa /usr/bin/fa
+    echo -e "\n\n${GREEN}Beginning installation...${PURPLE}"
 
-	git clone $OPERATIONS_GIT_URL ${INSTALLATION_PATH}/fetchapply/operations
+    if [ "$OS" == "Darwin" ]
+    then
+        scutil --set HostName $DEVICE_HOSTNAME
+        scutil --set LocalHostName $DEVICE_HOSTNAME
+        scutil --set ComputerName $DEVICE_HOSTNAME
+    else
+        hostnamectl set-hostname $DEVICE_HOSTNAME
+    fi
 
-	echo -e "# Fetch Apply Configuration File\n\n# This file contains global variables used within\n# Fetch Apply to modify certain, standard behaviors.\n\n# All possible options, along with their default values,\n# are listed within this file.\n\n# Please refrain from removing/renaming any of these variables,\n# and maintain proper, Bash syntax at all times.\n\n" > /etc/fetchapply
+    mkdir -p ${INSTALLATION_PATH}/fetch-apply
+    git clone $FA_REPOSITORY_URL ${INSTALLATION_PATH}/fetch-apply
+    ln -sf ${INSTALLATION_PATH}/fetch-apply/fa /usr/bin/fa
 
-	echo -e "# Fetch Apply installation location:\nfa_var_FA_ROOT=${INSTALLATION_PATH}/fetchapply\n" >> /etc/fetchapply
-	echo -e "# Fetch Apply log file path:\nfa_var_LOG_FILE_PATH=${LOG_FILE_PATH}\n" >> /etc/fetchapply
-	echo -e "# Fetch Apply maximum log file size (in lines):\nfa_var_MAX_LOG_LENGTH=10000\n" >> /etc/fetchapply
-	echo -e "# Operations repository branch to use:\nfa_var_OPERATIONS_BRANCH=${OPERATIONS_GIT_BRANCH}\n" >> /etc/fetchapply
-	echo -e "# Allow automatic class assignments:\nfa_var_AUTOMATIC_CLASS_ASSIGNMENT=true\n" >> /etc/fetchapply
-	echo -e "# Automatically pull from remote repository with each run:\nfa_var_AUTOMATIC_FETCH=true\n" >> /etc/fetchapply
-	echo -e "# Only apply modules after a change is detected in the remote operations repository:\nfa_var_APPLY_ON_CHANGE=false\n" >> /etc/fetchapply
-	echo -e "# Ignore errors (pause locks will be honored, but execution will not\n# halt for run locks or after any command returns a non-zero exit code):\nfa_var_IGNORE_ERRORS=false" >> /etc/fetchapply
+    git clone $OPERATIONS_REPOSITORY_URL ${INSTALLATION_PATH}/fetch-apply/operations
 
+    echo -e "# Fetch Apply Configuration File\n\n# This file contains global variables used within\n# Fetch Apply to modify certain, standard behaviors.\n\n# All possible options, along with their default values,\n# are listed within this file.\n\n# Please refrain from removing/renaming any of these variables,\n# and maintain proper, Bash syntax at all times.\n\n" > /etc/fetch-apply
 
-	echo -e "SHELL=/bin/sh\nPATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin\n${CRONTAB_ENTRY} root ${INSTALLATION_PATH}/fetchapply/fa 2>&1" > /etc/cron.d/fa
+    echo -e "# Fetch Apply installation location:\nfa_var_FA_ROOT=${INSTALLATION_PATH}/fetch-apply\n" >> /etc/fetch-apply
+    echo -e "# Fetch Apply log file path:\nfa_var_LOG_FILE_PATH=${LOG_FILE_PATH}\n" >> /etc/fetch-apply
+    echo -e "# Fetch Apply maximum log file size (in lines):\nfa_var_MAX_LOG_LENGTH=10000\n" >> /etc/fetch-apply
+    echo -e "# Operations repository branch to use:\nfa_var_OPERATIONS_BRANCH=${OPERATIONS_REPOSITORY_BRANCH}\n" >> /etc/fetch-apply
+    echo -e "# Allow automatic class assignments:\nfa_var_AUTOMATIC_CLASS_ASSIGNMENT=true\n" >> /etc/fetch-apply
+    echo -e "# Automatically pull from remote repository with each run:\nfa_var_AUTOMATIC_FETCH=true\n" >> /etc/fetch-apply
+    echo -e "# Only execute modules/patches/initializers after a change is detected in the remote operations repository:\nfa_var_EXECUTE_ON_CHANGE=false\n" >> /etc/fetch-apply
+    echo -e "# Only execute modules after they have been modified:\nfa_var_EXECUTE_IF_MODIFIED=false\n" >> /etc/fetch-apply
+    echo -e "# Ignore errors (pause locks will be honored, but execution will not\n# halt for run locks or after any command returns a non-zero exit code):\nfa_var_IGNORE_ERRORS=false" >> /etc/fetch-apply
+    echo -e "fa_var_FIRST_RUN_DO_NOT_MODIFY_THIS_MANUALLY=true" >> /etc/fetch-apply
 
-	echo -e "\n\n${GREEN}Installation complete.${NO_COLOR}"
+    if [ "$OS" == "Darwin" ]
+    then
+        # Use launchd not cron.
+        echo -e "SHELL=/bin/sh\nPATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin\n${CRONTAB_ENTRY} root ${INSTALLATION_PATH}/fetch-apply/fa 2>&1" > /usr/lib/cron/jobs/fa
+    else
+        echo -e "SHELL=/bin/sh\nPATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin\n${CRONTAB_ENTRY} root ${INSTALLATION_PATH}/fetch-apply/fa 2>&1" > /etc/cron.d/fa
+    fi
+
+    echo -e "\n\n${GREEN}Installation complete.${NO_COLOR}"
 }
 
 
 function uninstall()
 {
-	rm -rf $fa_var_FA_ROOT
-	rm -f $fa_var_LOG_FILE_PATH
-	rm -f ${fa_var_LOG_FILE_PATH}.old
-	rm /etc/cron.d/fa
-	rm -f /usr/bin/fa
+    rm -rf $fa_var_FA_ROOT
+    rm -f $fa_var_LOG_FILE_PATH
+    rm -f ${fa_var_LOG_FILE_PATH}.old
+    rm /etc/cron.d/fa
+    rm -f /usr/bin/fa
 
-	echo -e "${GREEN}Fetch Apply successfully uninstalled.${NO_COLOR}"
+    echo -e "${GREEN}Fetch Apply successfully uninstalled.${NO_COLOR}"
 }
 
 
 function interactive()
 {
-	echo -e "Welcome to the Fetch Apply installation script.\n\nPlease answer the following questions about how you would like to\ninstall Fetch Apply. If you are not sure what to put, press enter,\nand the default value in parentheses will be applied."
+    echo -e "Welcome to the Fetch Apply installation script.\n\nPlease answer the following questions about how you would like to\ninstall Fetch Apply. If you are not sure what to put, press enter,\nand the default value in parentheses will be applied."
 
-	echo -e "\n\n${BLUE}Where would you like to install Fetch Apply?\n${CYAN}Installation Path (/var/lib):${NO_COLOR}"
-	read INSTALLATION_PATH
-	if [ -z "$INSTALLATION_PATH" ]
-	then
-		INSTALLATION_PATH="/var/lib"
-	fi
+    echo -e "\n\n${BLUE}Where would you like to install Fetch Apply?\n${CYAN}Installation Path (/var/lib):${NO_COLOR}"
+    read INSTALLATION_PATH
+    if [ -z "$INSTALLATION_PATH" ]
+    then
+        INSTALLATION_PATH="/var/lib"
+    fi
 
-	if [ -e "${INSTALLATION_PATH}/fetchapply" ]
-	then
-		echo -e "${RED}Error. An existing Fetch Apply installation was found.${NO_COLOR}"
+    if [ -e "${INSTALLATION_PATH}/fetch-apply" ]
+    then
+        echo -e "${RED}Error. An existing Fetch Apply installation was found.${NO_COLOR}"
 
-		echo -e "\n${BLUE}Would you like to reinstall/upgrade Fetch Apply?\nThe entire, current installation will be removed, and all\npreferences, settings, operations, etc. will be lost.\n${CYAN}Reinstall/Upgrade Fetch Apply (yes):${NO_COLOR}"
-		read UPGRADE_FETCH_APPLY
-		if [ -z "$UPGRADE_FETCH_APPLY" ]
-		then
-			UPGRADE_FETCH_APPLY="yes"
-		fi
+        echo -e "\n${BLUE}Would you like to reinstall Fetch Apply?\nThe entire, current installation will be removed, and all\npreferences, settings, operations, etc. will be lost.\n${CYAN}Reinstall Fetch Apply (yes):${NO_COLOR}"
+        read REINSTALL_FETCH_APPLY
 
-		if [ "$UPGRADE_FETCH_APPLY" == "yes" ]
-		then
-			rm -rf /var/lib/fetchapply
-			echo -e "\n${GREEN}The old Fetch Apply installation was successfully removed.${NO_COLOR}"
-		else
-			echo -e "\n${RED}Leaving the old Fetch Apply installation intact. Exiting...${NO_COLOR}"
-			exit 1
-		fi
-	fi
+        if [ -z "$REINSTALL_FETCH_APPLY" ] || [ "$REINSTALL_FETCH_APPLY" == "yes" ]
+        then
+            rm -rf /var/lib/fetch-apply
+            echo -e "\n${GREEN}The old Fetch Apply installation was successfully removed.${NO_COLOR}"
+        else
+            echo -e "\n${RED}Leaving the old Fetch Apply installation intact. Exiting...${NO_COLOR}"
+            exit 1
+        fi
+    fi
 
-	echo -e "\n\n${BLUE}Where would you like to create a log file?\n${CYAN}Log file (/var/log/fetchapply.log):${NO_COLOR}"
-	read LOG_FILE_PATH
-	if [ -z "$LOG_FILE_PATH" ]
-	then
-		LOG_FILE_PATH="/var/log/fetchapply.log"
-	fi
+    echo -e "\n\n${BLUE}Where would you like to store the log file?\n${CYAN}Log file (/var/log/fetch-apply.log):${NO_COLOR}"
+    read LOG_FILE_PATH
+    if [ -z "$LOG_FILE_PATH" ]
+    then
+        LOG_FILE_PATH='/var/log/fetch-apply.log'
+    fi
 
-	echo -e "\n\n${BLUE}What is your operations git URL?\n${CYAN}URL (https://github.com/P5vc/ServerConfigurations.git):${NO_COLOR}"
-	read OPERATIONS_GIT_URL
-	if [ -z "$OPERATIONS_GIT_URL" ]
-	then
-		OPERATIONS_GIT_URL="https://github.com/P5vc/ServerConfigurations.git"
-	fi
+    echo -e "\n\n${BLUE}What is your operations git repository URL?\n${CYAN}URL (https://git.p5.vc/Priveasy/server-configurations.git):${NO_COLOR}"
+    read OPERATIONS_REPOSITORY_URL
+    if [ -z "$OPERATIONS_REPOSITORY_URL" ]
+    then
+        OPERATIONS_REPOSITORY_URL="https://git.p5.vc/Priveasy/server-configurations.git"
+    fi
 
-	echo -e "\n\n${BLUE}Which branch of your operations repository would you like to use?\n${CYAN}Branch (main):${NO_COLOR}"
-	read OPERATIONS_GIT_BRANCH
-	if [ -z "$OPERATIONS_GIT_BRANCH" ]
-	then
-		OPERATIONS_GIT_BRANCH="main"
-	fi
+    echo -e "\n\n${BLUE}Which branch of the operations repository would you like to use?\n${CYAN}Branch (main):${NO_COLOR}"
+    read OPERATIONS_REPOSITORY_BRANCH
+    if [ -z "$OPERATIONS_REPOSITORY_BRANCH" ]
+    then
+        OPERATIONS_REPOSITORY_BRANCH='main'
+    fi
 
-	echo -e "\n\n${BLUE}What is the desired hostname for this server?\n${CYAN}Hostname (${SERVER_HOSTNAME}):${NO_COLOR}"
-	read SERVER_HOSTNAME_CHANGED
-	if [ -n "$SERVER_HOSTNAME_CHANGED" ]
-	then
-		SERVER_HOSTNAME="${SERVER_HOSTNAME_CHANGED}"
-	fi
+    echo -e "\n\n${BLUE}What hostname would you like to set on this device?\n${CYAN}Hostname (${DEVICE_HOSTNAME}):${NO_COLOR}"
+    read DEVICE_HOSTNAME_CHANGED
+    if [ -n "$DEVICE_HOSTNAME_CHANGED" ]
+    then
+        DEVICE_HOSTNAME="${DEVICE_HOSTNAME_CHANGED}"
+    fi
 
-	echo -e "\n\n${BLUE}What is the desired Fetch Apply run frequency? The default is once every 24 hours.\n${CYAN}Run frequency in crontab syntax (${CRONTAB_ENTRY}):${NO_COLOR}"
-	read THEIR_CRONTAB_ENTRY
-	if [ -n "$THEIR_CRONTAB_ENTRY" ]
-	then
-		CRONTAB_ENTRY="$THEIR_CRONTAB_ENTRY"
-	fi
+    echo -e "\n\n${BLUE}What is the desired Fetch Apply run frequency? The default is once every 24 hours.\n${CYAN}Run frequency in crontab syntax (${CRONTAB_ENTRY}):${NO_COLOR}"
+    read CUSTOM_CRONTAB_ENTRY
+    if [ -n "$CUSTOM_CRONTAB_ENTRY" ]
+    then
+        CRONTAB_ENTRY="$CUSTOM_CRONTAB_ENTRY"
+    fi
 }
 
 
 function upgrade()
 {
-	curl https://raw.githubusercontent.com/P5vc/FetchApply/main/iteration -o /tmp/iteration
-	source /tmp/iteration
-	rm -f /tmp/iteration
+    curl https://git.p5.vc/Priveasy/fetch-apply/raw/branch/main/iteration -o /tmp/iteration
+    source /tmp/iteration
+    rm -f /tmp/iteration
 
-	fa_var_NEW_COMPATIBLE_UPGRADE_ITERATION="$fa_var_COMPATIBLE_UPGRADE_ITERATION"
+    fa_var_NEW_COMPATIBLE_UPGRADE_ITERATION="$fa_var_COMPATIBLE_UPGRADE_ITERATION"
 
-	source ${fa_var_FA_ROOT}/iteration
+    source ${fa_var_FA_ROOT}/iteration
 
-	if [ "$fa_var_UPGRADE_ITERATION" -ge "$fa_var_NEW_COMPATIBLE_UPGRADE_ITERATION" ]
-	then
-		if [ "$fa_var_DISABLE_AUTOMATED_UPGRADES" == "No" ]
-		then
-			echo -e "${GREEN}Beginning Automated Upgrade...${NO_COLOR}"
+    if [ "$fa_var_UPGRADE_ITERATION" -ge "$fa_var_NEW_COMPATIBLE_UPGRADE_ITERATION" ]
+    then
+        if [ "$fa_var_DISABLE_AUTOMATED_UPGRADES" == "No" ]
+        then
+            echo -e "${GREEN}Beginning Automated Upgrade...${NO_COLOR}"
 
-			echo -e "${PURPLE}Backing up files...${NO_COLOR}"
-			cp /etc/fetchapply /tmp/fetchapply
-			cp /etc/cron.d/fa /tmp/fa
-			cp ${fa_var_FA_ROOT}/status/completedInits /tmp/completedInits
-			cp $fa_var_LOG_FILE_PATH /tmp/fetchapply.log
-			if [ -e "${fa_var_LOG_FILE_PATH}.old" ]
-			then
-				cp ${fa_var_LOG_FILE_PATH}.old /tmp/fetchapply.log.old
-			fi
+            echo -e "${PURPLE}Backing up files...${NO_COLOR}"
+            cp /etc/fetch-apply /tmp/fetch-apply
+            cp /etc/cron.d/fa /tmp/fa
+            cp ${fa_var_FA_ROOT}/status/completed-initializers /tmp/completed-initializers
+            cp ${fa_var_FA_ROOT}/status/completed-patches /tmp/completed-patches
+            cp $fa_var_LOG_FILE_PATH /tmp/fetch-apply.log
+            if [ -e "${fa_var_LOG_FILE_PATH}.old" ]
+            then
+                cp ${fa_var_LOG_FILE_PATH}.old /tmp/fetch-apply.log.old
+            fi
 
-			INSTALLATION_PATH="${fa_var_FA_ROOT::-11}"
-			OPERATIONS_GIT_URL="$(cat ${fa_var_FA_ROOT}/operations/.git/config | grep url | awk '{print $3}')"
-			LOG_FILE_PATH=$fa_var_LOG_FILE_PATH
+            INSTALLATION_PATH="${fa_var_FA_ROOT::-12}"
+            OPERATIONS_REPOSITORY_URL="$(cat ${fa_var_FA_ROOT}/operations/.git/config | grep url | awk '{print $3}')"
+            LOG_FILE_PATH=$fa_var_LOG_FILE_PATH
 
-			echo -e "${PURPLE}Removing old Fetch Apply installation...${NO_COLOR}"
-			uninstall
+            echo -e "${PURPLE}Removing old Fetch Apply installation...${NO_COLOR}"
+            uninstall
 
-			echo -e "${PURPLE}Reinstalling Fetch Apply...${NO_COLOR}"
-			install
+            echo -e "${PURPLE}Reinstalling Fetch Apply...${NO_COLOR}"
+            install
 
-			echo -e "${PURPLE}Restoring backed-up files...${NO_COLOR}"
-			mv /tmp/fetchapply /etc/fetchapply
-			mv /tmp/fa /etc/cron.d/fa
-			mv /tmp/completedInits ${fa_var_FA_ROOT}/status/completedInits
-			mv /tmp/fetchapply.log $fa_var_LOG_FILE_PATH
-			if [ -e "/tmp/fetchapply.log.old" ]
-			then
-				mv /tmp/fetchapply.log.old ${fa_var_LOG_FILE_PATH}.old
-			fi
+            echo -e "${PURPLE}Restoring backed-up files...${NO_COLOR}"
+            mv /tmp/fetch-apply /etc/fetch-apply
+            mv /tmp/fa /etc/cron.d/fa
+            mv /tmp/completed-initializers ${fa_var_FA_ROOT}/status/completed-initializers
+            mv /tmp/completed-patches ${fa_var_FA_ROOT}/status/completed-patches
+            mv /tmp/fetch-apply.log $fa_var_LOG_FILE_PATH
+            if [ -e "/tmp/fetch-apply.log.old" ]
+            then
+                mv /tmp/fetch-apply.log.old ${fa_var_LOG_FILE_PATH}.old
+            fi
 
-			echo -e "$(date)\tFetch Apply Successfully Upgraded" >> $fa_var_LOG_FILE_PATH
-			echo -e "${GREEN}Upgrade Complete!${NO_COLOR}"
-		else
-			echo -e "${YELLOW}Warning.\nYou have disabled automated upgrades within your Fetch Apply 'iteration' file.\nIf you wish to proceed, please set 'fa_var_DISABLE_AUTOMATED_UPGRADES=No'."
-			exit 0
-		fi
-	else
-		echo -e "${RED}Error. The Fetch Apply version currently installed on your system is\nincompatible with the latest version of Fetch Apply.\nTherefore, an automated upgrade cannot be performed."
-		exit 1
-	fi
+            echo -e "$(date)\tFetch Apply Successfully Upgraded" >> $fa_var_LOG_FILE_PATH
+            echo -e "${GREEN}Upgrade Complete!${NO_COLOR}"
+        else
+            echo -e "${YELLOW}Warning.\nYou have disabled automated upgrades within your Fetch Apply 'iteration' file.\nIf you wish to proceed, please set 'fa_var_DISABLE_AUTOMATED_UPGRADES=No'."
+            exit 0
+        fi
+    else
+        echo -e "${RED}Error. The Fetch Apply version currently installed on your system is\nincompatible with the latest version of Fetch Apply.\nTherefore, an automated upgrade cannot be performed."
+        exit 1
+    fi
 }
 
+function handle_error
+{
+    local exit_code="$?"
+    local failed_command="${BASH_COMMAND:-unknown}"
+    echo -e "\n\n${RED}The command '${failed_command}' exited with exit code ${exit_code}.${NO_COLOR}\n${YELLOW}Removing installed components...${NO_COLOR}"
+    uninstall
+    exit $exit_code
+}
 
-if [ $# == 0 ]
-then
-	interactive
-fi
-
+trap handle_error ERR
 
 # Parse command-line arguments:
 for argument in "$@"
 do
-	if [ "$argument" == "--uninstall" ]
-	then
-		source /etc/fetchapply
-		uninstall
-		exit 0
-	elif [ "$argument" == "--upgrade" ]
-	then
-		source /etc/fetchapply
-		upgrade
-		exit 0
-	elif [ "$argument" == "--help" ]
-	then
-		usage
-		exit 0
-	elif [ "${argument:0:20}" == "--installation-path=" ]
-	then
-		INSTALLATION_PATH="${argument:20}"
-	elif [ "${argument:0:16}" == "--log-file-path=" ]
-	then
-		LOG_FILE_PATH="${argument:16}"
-	elif [ "${argument:0:21}" == "--operations-git-url=" ]
-	then
-		OPERATIONS_GIT_URL="${argument:21}"
-	elif [ "${argument:0:24}" == "--operations-git-branch=" ]
-	then
-		OPERATIONS_GIT_BRANCH="${argument:24}"
-	elif [ "${argument:0:18}" == "--server-hostname=" ]
-	then
-		SERVER_HOSTNAME="${argument:18}"
-	elif [ "${argument:0:16}" == "--crontab-entry=" ]
-	then
-		CRONTAB_ENTRY="${argument:16}"
-	else
-		echo -e "${RED}Error. The commandline argument '${argument}' is invalid.${NO_COLOR}"
-		exit 1
-	fi
+    if [ "$argument" == "--uninstall" ]
+    then
+        source /etc/fetch-apply
+        uninstall
+        exit 0
+    elif [ "$argument" == "--upgrade" ]
+    then
+        source /etc/fetch-apply
+        upgrade
+        exit 0
+    elif [ "$argument" == "--help" ]
+    then
+        usage
+        exit 0
+    elif [ "${argument:0:20}" == "--installation-path=" ]
+    then
+        INSTALLATION_PATH="${argument:20}"
+    elif [ "${argument:0:16}" == "--log-file-path=" ]
+    then
+        LOG_FILE_PATH="${argument:16}"
+    elif [ "${argument:0:28}" == "--operations-repository-url=" ]
+    then
+        OPERATIONS_REPOSITORY_URL="${argument:28}"
+    elif [ "${argument:0:31}" == "--operations-repository-branch=" ]
+    then
+        OPERATIONS_REPOSITORY_BRANCH="${argument:31}"
+    elif [ "${argument:0:18}" == "--device-hostname=" ]
+    then
+        DEVICE_HOSTNAME="${argument:18}"
+    elif [ "${argument:0:16}" == "--crontab-entry=" ]
+    then
+        CRONTAB_ENTRY="${argument:16}"
+    else
+        echo -e "${RED}Error. The commandline argument '${argument}' is invalid.${NO_COLOR}"
+        exit 1
+    fi
 done
+
+
+# If no commandline arguments are provided, run in interactive mode:
+if [ $# == 0 ]
+then
+    interactive
+fi
 
 
 install

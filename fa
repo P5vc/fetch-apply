@@ -1,13 +1,20 @@
 #!/usr/bin/env bash
 
-source /etc/fetchapply
+fa_var_FIRST_RUN_DO_NOT_MODIFY_THIS_MANUALLY="false"
+
+source /etc/fetch-apply
 source ${fa_var_FA_ROOT}/mo
+
+if [ "$fa_var_FIRST_RUN_DO_NOT_MODIFY_THIS_MANUALLY" == "true" ]
+then
+    sed -i '/^fa_var_FIRST_RUN_DO_NOT_MODIFY_THIS_MANUALLY=true$/d' /etc/fetch-apply
+fi
 
 if [ "$fa_var_IGNORE_ERRORS" == "true" ]
 then
-	set -uo pipefail
+    set -uo pipefail
 else
-	set -euo pipefail
+    set -euo pipefail
 fi
 
 set -E
@@ -15,99 +22,100 @@ set -E
 cd ${fa_var_FA_ROOT}
 
 
-fa_var_host=$(hostname)
-fa_var_applicableDirectories=""
+fa_var_hostname=$(hostname)
+fa_var_applicable_directories=""
 
-fa_var_pauseFile="${fa_var_FA_ROOT}/status/pause"
-fa_var_lockFile="${fa_var_FA_ROOT}/status/lock"
+fa_var_pause_file="${fa_var_FA_ROOT}/status/pause"
+fa_var_lock_file="${fa_var_FA_ROOT}/status/lock"
 
 fa_var_force="No"
 fa_var_quiet="No"
-if [ "$fa_var_AUTOMATIC_FETCH" == "true" ]
-then
-	fa_var_fetch="Yes"
-else
-	fa_var_fetch="No"
-fi
 
 fa_var_cmd=""
 fa_var_cmd_arg=""
 
-fa_var_initCompleted="No"
+fa_var_run="Yes"
+
+fa_var_initializer_completed="No"
+
+fa_var_latest_commit_before_fetch="$(cd ${fa_var_FA_ROOT}/operations && git log -n 1 --format='%H')"
 
 
 function fa_func_log
 {
-	local fa_var_RED fa_var_YELLOW fa_var_CYAN fa_var_GREEN fa_var_NO_COLOR fa_var_color
+    local fa_var_RED fa_var_YELLOW fa_var_CYAN fa_var_GREEN fa_var_NO_COLOR fa_var_color
 
-	fa_var_RED="\033[0;31m"
-	fa_var_YELLOW="\033[0;33m"
-	fa_var_CYAN="\033[0;36m"
-	fa_var_GREEN="\033[0;32m"
-	fa_var_NO_COLOR="\033[0m"
+    fa_var_RED="\033[0;31m"
+    fa_var_YELLOW="\033[0;33m"
+    fa_var_CYAN="\033[0;36m"
+    fa_var_GREEN="\033[0;32m"
+    fa_var_NO_COLOR="\033[0m"
 
-	fa_var_color=""
+    fa_var_color=""
 
-	if [ "$1" == "Error" ]
-	then
-		fa_var_color="$fa_var_RED"
-	elif [ "$1" == "Warning" ]
-	then
-		fa_var_color="$fa_var_YELLOW"
-	elif [ "$1" == "Info" ]
-	then
-		fa_var_color="$fa_var_CYAN"
-	elif [ "$1" == "Success" ]
-	then
-		fa_var_color="$fa_var_GREEN"
-	fi
+    if [ "$1" == "Error" ]
+    then
+        fa_var_color="$fa_var_RED"
+    elif [ "$1" == "Warning" ]
+    then
+        fa_var_color="$fa_var_YELLOW"
+    elif [ "$1" == "Info" ]
+    then
+        fa_var_color="$fa_var_CYAN"
+    elif [ "$1" == "Success" ]
+    then
+        fa_var_color="$fa_var_GREEN"
+    fi
 
-	if [ "$fa_var_quiet" == "No" ]
-	then
-		echo -e "${fa_var_color}${2}${fa_var_NO_COLOR}"
-		echo -e "$(date)\t${2}" >> $fa_var_LOG_FILE_PATH
-	else
-		if [ "$1" == "Error" ]
-		then
-			echo -e "$(date)\t${2}" >> $fa_var_LOG_FILE_PATH
-		fi
-	fi
+    if [ "$fa_var_quiet" == "No" ]
+    then
+        echo -e "${fa_var_color}${2}${fa_var_NO_COLOR}"
+        echo -e "$(date)\t${2}" >> $fa_var_LOG_FILE_PATH
+    else
+        if [ "$1" == "Error" ]
+        then
+            echo -e "$(date)\t${2}" >> $fa_var_LOG_FILE_PATH
+        fi
+    fi
 }
 
 
-function fa_func_logTrim
+function fa_func_log_trim
 {
-	fa_func_log Info "Inspecting Fetch Apply log..."
+    fa_func_log Info "Inspecting Fetch Apply log..."
 
-	if [ "$(cat $fa_var_LOG_FILE_PATH | grep -c '')" -gt "$fa_var_MAX_LOG_LENGTH" ]
-	then
-		if [ -e "${fa_var_LOG_FILE_PATH}.old" ]
-		then
-			rm ${fa_var_LOG_FILE_PATH}.old
-		fi
+    if [ "$(cat $fa_var_LOG_FILE_PATH | grep -c '')" -gt "$fa_var_MAX_LOG_LENGTH" ]
+    then
+        if [ -e "${fa_var_LOG_FILE_PATH}.old" ]
+        then
+            rm ${fa_var_LOG_FILE_PATH}.old
+        fi
 
-		mv ${fa_var_LOG_FILE_PATH} ${fa_var_LOG_FILE_PATH}.old
-		touch ${fa_var_LOG_FILE_PATH}
+        mv ${fa_var_LOG_FILE_PATH} ${fa_var_LOG_FILE_PATH}.old
+        touch ${fa_var_LOG_FILE_PATH}
 
-		fa_func_log Success "Fetch Apply log successfully trimmed..."
-	fi
+        fa_func_log Success "Fetch Apply log successfully trimmed..."
+    fi
 }
 
 
-function fa_func_handleError
+function fa_func_handle_error
 {
-	local exitCode="$?"
-	local failedCommand="${BASH_COMMAND:-unknown}"
-	fa_func_log Error "The command '${failedCommand}' exited with exit code ${exitCode}."
+    local exit_code="$?"
+    local failed_command="${BASH_COMMAND:-unknown}"
+    if [ "$failed_command" != "source apply" ]
+    then
+        fa_func_log Error "The command '${failed_command}' exited with exit code ${exit_code}."
+    fi
 }
 
 
-function fa_func_handleExit
+function fa_func_handle_exit
 {
-	if [ "$?" != "0" ]
-	then
-		fa_func_log Error "Failed.\nExiting..."
-	fi
+    if [ "$?" != "0" ]
+    then
+        fa_func_log Error "Fetch Apply has halted execution early due to one of the operations returning a\nnon-zero exit code (or manually calling exit). If you would like Fetch Apply to\nignore errors like these in the future, and continue execution, set\n'fa_var_IGNORE_ERRORS' equal to 'true' in the Fetch Apply configuration file."
+    fi
 }
 
 
@@ -129,8 +137,8 @@ Commands:
   fetch                    Update local operations repository by fetching from upstream
   run <module name>        Run a specific module ad hoc (--force automatically set)
   pause                    Set the pause lock to avoid periodic runs while debugging
-  resume                   Resume periodic runs after a pause
-  recover                  Reset run lock file after a failure
+  resume                   Resume periodic runs after a pause (unset the pause lock)
+  recover                  Remove run lock after a failure
   clear-inits              Allow completed initializers to run once more
   reset                    Reset/clean operations repository to match the remote origin
   list-classes-to-run      List all classes applicable to the local system
@@ -141,658 +149,754 @@ EOF
 }
 
 
-function fa_func_gitFetch
+function fa_func_fetch
 {
-	if [ "$fa_var_OPERATIONS_BRANCH" != "$(git -C ${fa_var_FA_ROOT}/operations branch --show-current)" ]
-	then
-		fa_func_log Info "Switching the current branch from \"$(git -C ${fa_var_FA_ROOT}/operations branch --show-current)\" to \"${fa_var_OPERATIONS_BRANCH}\"..."
-		git -C ${fa_var_FA_ROOT}/operations checkout $fa_var_OPERATIONS_BRANCH
-		if [ "$fa_var_OPERATIONS_BRANCH" != "$(git -C ${fa_var_FA_ROOT}/operations branch --show-current)" ]
-		then
-			fa_func_log Error "Unable to switch to branch \"${fa_var_OPERATIONS_BRANCH}\". Does this branch exist?"
-			exit 1
-		fi
-	fi
+    if [ "$fa_var_OPERATIONS_BRANCH" != "$(git -C ${fa_var_FA_ROOT}/operations branch --show-current)" ]
+    then
+        fa_func_log Info "Switching the current branch from \"$(git -C ${fa_var_FA_ROOT}/operations branch --show-current)\" to \"${fa_var_OPERATIONS_BRANCH}\"..."
+        git -C ${fa_var_FA_ROOT}/operations checkout $fa_var_OPERATIONS_BRANCH
+        if [ "$fa_var_OPERATIONS_BRANCH" != "$(git -C ${fa_var_FA_ROOT}/operations branch --show-current)" ]
+        then
+            fa_func_log Error "Unable to switch to branch \"${fa_var_OPERATIONS_BRANCH}\". Does this branch exist?"
+            exit 1
+        fi
+    fi
 
-	if [ "$fa_var_fetch" == "Yes" ]
-	then
-		if [ "$fa_var_APPLY_ON_CHANGE" == "true" ]
-		then
-			fa_func_log Info "Looking for changes in remote operations repository..."
-			timeout 600 git -C ${fa_var_FA_ROOT}/operations remote update > /dev/null
+    if [ "$fa_var_AUTOMATIC_FETCH" == "true" ]
+    then
+        if [ "$fa_var_EXECUTE_ON_CHANGE" == "true" ]
+        then
+            fa_func_log Info "Looking for changes in the remote operations repository..."
+            timeout 600 git -C ${fa_var_FA_ROOT}/operations remote update > /dev/null
 
-			if [ -z "$(git -C ${fa_var_FA_ROOT}/operations diff origin/${fa_var_OPERATIONS_BRANCH})" ]
-			then
-				fa_func_log Success "No changes detected. Exiting..."
-				exit 0
-			else
-				fa_func_log Info "Changes detected. Continuing..."
-			fi
-		fi
+            if [ -z "$(git -C ${fa_var_FA_ROOT}/operations diff origin/${fa_var_OPERATIONS_BRANCH})" ]
+            then
+                fa_func_log Success "No changes detected. Exiting..."
+                exit 0
+            else
+                fa_func_log Info "Changes detected. Continuing..."
+            fi
+        fi
 
-		if [ -z "$(git -C ${fa_var_FA_ROOT}/operations status --porcelain)" ]
-		then
-			timeout 600 git -C ${fa_var_FA_ROOT}/operations pull > /dev/null
-		else
-			fa_func_log Error "Operations checkout is dirty."
-			fa_func_log Info "Run with '--no-fetch' to bypass this check, or set fa_var_AUTOMATIC_FETCH=false\nin the Fetch Apply configuration file."
-			exit 1
-		fi
-	else
-		fa_func_log Info "Skipping fetch..."
-	fi
+        if [ -z "$(git -C ${fa_var_FA_ROOT}/operations status --porcelain)" ]
+        then
+            timeout 600 git -C ${fa_var_FA_ROOT}/operations pull > /dev/null
+        else
+            fa_func_log Error "Operations repository checkout is dirty."
+            fa_func_log Info "Run 'fa reset' to remove any changes made to the local operations repository\nand reset it so that it matches the remote origin. Alternatively, you may use\nthe '--no-fetch' argument to bypass pulling from the remote origin ( and\ntherefore also this check), or set 'fa_var_AUTOMATIC_FETCH=false' in the Fetch\nApply configuration file for the same result."
+            exit 1
+        fi
+    else
+        fa_func_log Info "Skipping fetch..."
+    fi
 }
 
 
-function fa_func_identifyApplicableClasses
+function fa_func_identify_applicable_classes
 {
-	local fa_var_class fa_var_manually_set fa_var_assignedHost
+    local fa_var_class fa_var_manually_set fa_var_assigned_host
 
-	for fa_var_class in ""$(ls -1 ${fa_var_FA_ROOT}/operations/classes | tr '\n' ' ')""
-	do fa_var_class="$(echo $fa_var_class | tr -d '[:space:]')"
+    for fa_var_class in ""$(ls -1 ${fa_var_FA_ROOT}/operations/classes | tr '\n' ' ')""
+    do fa_var_class="$(echo $fa_var_class | tr -d '[:space:]')"
 
-		if [ -z "$fa_var_class" ]
-		then
-			continue
-		fi
+        if [ -z "$fa_var_class" ]
+        then
+            continue
+        fi
 
-		# Handle manual assignments:
-		if [ -e "${fa_var_FA_ROOT}/operations/classes/${fa_var_class}/assignments" ]
-		then
-			fa_var_manually_set=false
+        # Handle manual assignments:
+        if [ -e "${fa_var_FA_ROOT}/operations/classes/${fa_var_class}/assignments" ]
+        then
+            fa_var_manually_set=false
 
-			for fa_var_assignedHost in ""$(cat ${fa_var_FA_ROOT}/operations/classes/${fa_var_class}/assignments | tr '\n' ' ')""
-			do fa_var_assignedHost="$(echo $fa_var_assignedHost | tr -d '[:space:]')"
+            for fa_var_assigned_host in ""$(cat ${fa_var_FA_ROOT}/operations/classes/${fa_var_class}/assignments | tr '\n' ' ')""
+            do fa_var_assigned_host="$(echo $fa_var_assigned_host | tr -d '[:space:]')"
 
-				if [ -z "$fa_var_assignedHost" ]
-				then
-					continue
-				fi
+                if [ -z "$fa_var_assigned_host" ]
+                then
+                    continue
+                fi
 
-				if [ "$fa_var_assignedHost" == "$fa_var_host" ]
-				then
-					fa_func_log Success "The class '${fa_var_class}' was manually assigned to this host..."
-					fa_var_applicableDirectories="${fa_var_applicableDirectories}${fa_var_FA_ROOT}/operations/classes/${fa_var_class} "
-					fa_var_manually_set=true
+                if [ "$fa_var_assigned_host" == "$fa_var_hostname" ]
+                then
+                    fa_func_log Success "The class '${fa_var_class}' was manually assigned to this host..."
+                    fa_var_applicable_directories="${fa_var_applicable_directories}${fa_var_FA_ROOT}/operations/classes/${fa_var_class} "
+                    fa_var_manually_set=true
 
-					# Check for a host directory within the assigned class:
-					if [ -e "${fa_var_FA_ROOT}/operations/classes/${fa_var_class}/${fa_var_host}" ]
-					then
-						fa_func_log Success "A specific host directory was identified within the '${fa_var_class}' class..."
-						fa_var_applicableDirectories="${fa_var_applicableDirectories}${fa_var_FA_ROOT}/operations/classes/${fa_var_class}/${fa_var_host} "
-					fi
-				fi
-			done
+                    # Check for a host directory within the assigned class:
+                    if [ -e "${fa_var_FA_ROOT}/operations/classes/${fa_var_class}/${fa_var_hostname}" ]
+                    then
+                        fa_func_log Success "A specific host directory was identified within the '${fa_var_class}' class..."
+                        fa_var_applicable_directories="${fa_var_applicable_directories}${fa_var_FA_ROOT}/operations/classes/${fa_var_class}/${fa_var_hostname} "
+                    fi
 
-			if [ "$fa_var_manually_set" == "true" ]
-			then
-				continue
-			fi
-		fi
+                    break
+                fi
+            done
 
-		# Handle automatic assignments:
-		if [ "$fa_var_AUTOMATIC_CLASS_ASSIGNMENT" == "true" ]
-		then
-			if [ -n "$(echo $fa_var_host | grep "$fa_var_class")" ]
-			then
-				fa_func_log Success "A match was found with the class '${fa_var_class}'..."
-				fa_var_applicableDirectories="${fa_var_applicableDirectories}${fa_var_FA_ROOT}/operations/classes/${fa_var_class} "
+            if [ "$fa_var_manually_set" == "true" ]
+            then
+                continue
+            fi
+        fi
 
-				if [ -e "${fa_var_FA_ROOT}/operations/classes/${fa_var_class}/${fa_var_host}" ]
-				then
-					fa_func_log Success "A specific host directory was identified within the '${fa_var_class}' class..."
-					fa_var_applicableDirectories="${fa_var_applicableDirectories}${fa_var_FA_ROOT}/operations/classes/${fa_var_class}/${fa_var_host} "
-				fi
-			fi
-		fi
-	done
+        # Handle automatic assignments:
+        if [ "$fa_var_AUTOMATIC_CLASS_ASSIGNMENT" == "true" ]
+        then
+            if [ -n "$(echo $fa_var_hostname | grep "$fa_var_class")" ]
+            then
+                fa_func_log Success "A match was found with the class '${fa_var_class}'..."
+                fa_var_applicable_directories="${fa_var_applicable_directories}${fa_var_FA_ROOT}/operations/classes/${fa_var_class} "
 
-	if [ -z "$fa_var_applicableDirectories" ]
-	then
-		fa_func_log Warning "No applicable classes found for this server.\nExiting..."
-		exit 0
-	fi
+                if [ -e "${fa_var_FA_ROOT}/operations/classes/${fa_var_class}/${fa_var_hostname}" ]
+                then
+                    fa_func_log Success "A specific host directory was identified within the '${fa_var_class}' class..."
+                    fa_var_applicable_directories="${fa_var_applicable_directories}${fa_var_FA_ROOT}/operations/classes/${fa_var_class}/${fa_var_hostname} "
+                fi
+            fi
+        fi
+    done
+
+    if [ -z "$fa_var_applicable_directories" ]
+    then
+        fa_func_log Warning "No applicable classes found for this server.\nExiting..."
+        exit 0
+    fi
 }
 
 
-function fa_func_loadVariables
+function fa_func_load_variables
 {
-	local fa_var_directory
+    local fa_var_directory
 
-	source ${fa_var_FA_ROOT}/operations/variables
+    source ${fa_var_FA_ROOT}/operations/variables
 
-	for fa_var_directory in $fa_var_applicableDirectories
-	do fa_var_directory="$(echo $fa_var_directory | tr -d '[:space:]')"
+    for fa_var_directory in $fa_var_applicable_directories
+    do fa_var_directory="$(echo $fa_var_directory | tr -d '[:space:]')"
 
-		if [ -z "$fa_var_directory" ]
-		then
-			continue
-		fi
+        if [ -z "$fa_var_directory" ]
+        then
+            continue
+        fi
 
-		if [ -e "${fa_var_directory}/variables" ]
-		then
-			source ${fa_var_directory}/variables
-		fi
-	done
+        if [ -e "${fa_var_directory}/variables" ]
+        then
+            source ${fa_var_directory}/variables
+        fi
+    done
 
-	fa_func_log Success "Host-specific base variables loaded..."
+    fa_func_log Success "Global and applicable class variables loaded..."
+}
+
+
+function fa_func_run_check
+{
+    # Check if this is a host or class directory:
+    fa_var_parent_directory_full_path="$(cd ${1}/../ ; pwd)"
+    if [ "$fa_var_parent_directory_full_path" == "${fa_var_FA_ROOT}/operations/classes" ]
+    then
+        # This is a class directory; check if an overriding host directory file/directory exists:
+        if [ -e "${1}/${fa_var_hostname}/override" ] && [ -e "${1}/${fa_var_hostname}/${2}" ]
+        then
+            # Overriding file/directory exists, so skip execution:
+            fa_func_log Info "The '$(basename ${1})' class ${2} are being overridden by host-specific ${2}, and will therefore be skipped..."
+            fa_var_run="No"
+        fi
+    else
+        # This is a host directory; skip execution if a host-specific file/directory doesn't exists:
+        if [ ! -e "${1}/${2}" ]
+        then
+            fa_func_log Info "No host-specific ${2} found for '${fa_var_hostname}'. Moving on..."
+            fa_var_run="No"
+        fi
+    fi
+}
+
+
+function fa_func_patches
+{
+    local fa_var_directory_full_path fa_var_parent_directory_full_path fa_var_patch_name fa_var_patch_completed fa_var_completed_patch_name fa_var_all_patch_names fa_var_patch_found
+
+    fa_var_all_patch_names=""
+
+    for fa_var_directory_full_path in $fa_var_applicable_directories
+    do fa_var_directory_full_path="$(echo $fa_var_directory_full_path | tr -d '[:space:]')"
+
+        if [ -z "$fa_var_directory_full_path" ]
+        then
+            continue
+        fi
+
+        # Skip if no 'patches' directory exists:
+        if [ ! -e "${fa_var_directory_full_path}/patches" ]
+        then
+            continue
+        fi
+
+        fa_func_run_check ${fa_var_directory_full_path} "patches"
+        if [ "$fa_var_run" == "No" ]
+        then
+            fa_var_run="Yes"
+            continue
+        fi
+
+        for fa_var_patch_name in ""$(ls -1 -p ${fa_var_directory_full_path}/patches | grep -v / | tr '\n' ' ')""
+        do fa_var_patch_name="$(echo $fa_var_patch_name | tr -d '[:space:]')"
+
+            if [ -z "$fa_var_patch_name" ]
+            then
+                continue
+            else
+                fa_var_all_patch_names="${fa_var_all_patch_names}${fa_var_patch_name} "
+                if [ "$fa_var_FIRST_RUN_DO_NOT_MODIFY_THIS_MANUALLY" == "true" ]
+                then
+                    echo "$fa_var_patch_name" >> ${fa_var_FA_ROOT}/status/completed-patches
+                fi
+            fi
+
+            # Don't run the patch if it has already been run:
+            fa_var_patch_completed="No"
+            for fa_var_completed_patch_name in ""$(cat ${fa_var_FA_ROOT}/status/completed-patches | tr '\n' ' ')""
+            do fa_var_completed_patch_name="$(echo $fa_var_completed_patch_name | tr -d '[:space:]')"
+
+                if [ -z "$fa_var_completed_patch_name" ]
+                then
+                    continue
+                fi
+
+                if [ "$fa_var_patch_name" == "$fa_var_completed_patch_name" ]
+                then
+                    fa_var_patch_completed="Yes"
+                    break
+                fi
+            done
+
+            if [ "$fa_var_patch_completed" == "No" ]
+            then
+                fa_func_log Info "Applying patch: '${fa_var_patch_name}'..."
+                echo "$fa_var_patch_name" >> ${fa_var_FA_ROOT}/status/completed-patches
+
+                cd ${fa_var_directory_full_path}/patches
+
+                if [ -e "${fa_var_directory_full_path}/patches/${fa_var_patch_name}" ]
+                then
+                    source ${fa_var_directory_full_path}/patches/${fa_var_patch_name}
+                else
+                    fa_func_log Error "The patch '${fa_var_patch_name}' could not be found.\nExiting..."
+                    exit 1
+                fi
+
+                cd ${fa_var_FA_ROOT}
+
+                fa_func_log Success "Patch '${fa_var_patch_name}' successfully applied..."
+            fi
+        done
+    done
+
+    # Remove deleted patches from the completed-patches file:
+    for fa_var_completed_patch_name in ""$(cat ${fa_var_FA_ROOT}/status/completed-patches | tr '\n' ' ')""
+    do fa_var_completed_patch_name="$(echo $fa_var_completed_patch_name | tr -d '[:space:]')"
+
+        fa_var_patch_found="false"
+        for fa_var_patch_name in $fa_var_all_patch_names
+        do fa_var_patch_name="$(echo $fa_var_patch_name | tr -d '[:space:]')"
+            if [ "$fa_var_completed_patch_name" == "$fa_var_patch_name" ]
+            then
+                fa_var_patch_found="true"
+                break
+            fi
+        done
+
+        if [ "$fa_var_patch_found" == "false" ]
+        then
+            sed -i "/^${fa_var_completed_patch_name}\$/d" ${fa_var_FA_ROOT}/status/completed-patches
+        fi
+
+    done
 }
 
 
 function fa_func_initializers
 {
-	local fa_var_directoryFullPath fa_var_initializerName fa_var_initCompleted fa_var_completedInitializerName
+    local fa_var_directory_full_path fa_var_parent_directory_full_path fa_var_initializer_name fa_var_initializer_completed fa_var_completed_initializer_name
 
-	for fa_var_directoryFullPath in $fa_var_applicableDirectories
-	do fa_var_directoryFullPath="$(echo $fa_var_directoryFullPath | tr -d '[:space:]')"
+    for fa_var_directory_full_path in $fa_var_applicable_directories
+    do fa_var_directory_full_path="$(echo $fa_var_directory_full_path | tr -d '[:space:]')"
 
-		if [ -z "$fa_var_directoryFullPath" ]
-		then
-			continue
-		fi
+        if [ -z "$fa_var_directory_full_path" ]
+        then
+            continue
+        fi
+
+        fa_func_run_check ${fa_var_directory_full_path} "initializers"
+        if [ "$fa_var_run" == "No" ]
+        then
+            fa_var_run="Yes"
+            continue
+        fi
+
+        for fa_var_initializer_name in ""$(cat ${fa_var_directory_full_path}/initializers | tr '\n' ' ')""
+        do fa_var_initializer_name="$(echo $fa_var_initializer_name | tr -d '[:space:]')"
+
+            if [ -z "$fa_var_initializer_name" ]
+            then
+                continue
+            fi
+
+            # Don't run the initializer if it has already been run:
+            fa_var_initializer_completed="No"
+            for fa_var_completed_initializer_name in ""$(cat ${fa_var_FA_ROOT}/status/completed-initializers | tr '\n' ' ')""
+            do fa_var_completed_initializer_name="$(echo $fa_var_completed_initializer_name | tr -d '[:space:]')"
+
+                if [ -z "$fa_var_completed_initializer_name" ]
+                then
+                    continue
+                fi
+
+                if [ "$fa_var_initializer_name" == "$fa_var_completed_initializer_name" ]
+                then
+                    fa_func_log Info "The '${fa_var_initializer_name}' initializer has already been completed, and will be skipped..."
+                    fa_var_initializer_completed="Yes"
+                    break
+                fi
+            done
+
+            if [ "$fa_var_initializer_completed" == "No" ]
+            then
+                fa_func_log Info "Executing the '${fa_var_initializer_name}' initializer..."
+                echo "$fa_var_initializer_name" >> ${fa_var_FA_ROOT}/status/completed-initializers
+
+                cd ${fa_var_FA_ROOT}/operations/initializers
+
+                if [ -e "${fa_var_FA_ROOT}/operations/initializers/${fa_var_initializer_name}" ]
+                then
+                    source ${fa_var_FA_ROOT}/operations/initializers/${fa_var_initializer_name}
+                else
+                    fa_func_log Error "The initializer '${fa_var_initializer_name}' could not be found.\nExiting..."
+                    exit 1
+                fi
+
+                cd ${fa_var_FA_ROOT}
+
+                fa_func_log Success "Initializer '${fa_var_initializer_name}' successfully executed..."
+            fi
+        done
+    done
+}
 
 
-		# Check if this is a host or class directory:
-		fa_var_parentDirectoryFullPath="$(cd ${fa_var_directoryFullPath}/../ ; pwd)"
-		if [ "$(basename $fa_var_parentDirectoryFullPath)" == "classes" ]
-		then
-			# This is a class directory; check if an overriding host directory initializers file exists:
-			if [ -e "${fa_var_directoryFullPath}/${fa_var_host}/override" ] && [ -e "${fa_var_directoryFullPath}/${fa_var_host}/initializers" ]
-			then
-				# Overriding initializers exist, so skip execution of these initializers:
-				fa_func_log Info "The '$(basename ${fa_var_directoryFullPath})' class initializers are being overridden by host-specific initializers, and will therefore be skipped..."
-				continue
-			fi
-		else
-			# This is a host directory; skip initializer execution if a host-specific initializers file doesn't exists:
-			if [ ! -e "${fa_var_directoryFullPath}/initializers" ]
-			then
-				fa_func_log Info "No host-specific initializers found for '${fa_var_host}'. Moving on..."
-				continue
-			fi
-		fi
+function fa_func_run_module
+{
+    local fa_var_module_directory fa_var_run_module
 
+    fa_var_module_directory="${fa_var_FA_ROOT}/operations/modules/${1}"
+    if [ ! -e "${fa_var_module_directory}" ]
+    then
+        fa_func_log Error "The module '${1}' could not be found.\nExiting..."
+        exit 1
+    fi
 
-		for fa_var_initializerName in ""$(cat ${fa_var_directoryFullPath}/initializers | tr '\n' ' ')""
-		do fa_var_initializerName="$(echo $fa_var_initializerName | tr -d '[:space:]')"
+    # Don't run the module if it hasn't been changed and fa_var_EXECUTE_IF_MODIFIED=true:
+    fa_var_run_module="true"
+    if [ "$fa_var_EXECUTE_IF_MODIFIED" == "true" ]
+    then
+        cd ${fa_var_FA_ROOT}/operations/modules/
+        if [ -z "$(git diff $(git log -n 1 --format='%H') ${fa_var_latest_commit_before_fetch} ${1})" ]
+        then
+            fa_func_log Info "Skipping module '${1}' because it has not been modified since the last run..."
+            fa_var_run_module="false"
+        fi
+        cd ${fa_var_FA_ROOT}
+    fi
 
-			if [ -z "$fa_var_initializerName" ]
-			then
-				continue
-			fi
+    if [ "$fa_var_run_module" == "true" ]
+    then
+        cd $fa_var_module_directory
 
-			# Don't run the initializer if it has already been run:
-			fa_var_initCompleted="No"
-			for fa_var_completedInitializerName in ""$(cat ${fa_var_FA_ROOT}/status/completedInits | tr '\n' ' ')""
-			do fa_var_completedInitializerName="$(echo $fa_var_completedInitializerName | tr -d '[:space:]')"
+        fa_func_log Info "Applying module '${1}'..."
 
-				if [ -z "$fa_var_completedInitializerName" ]
-				then
-					continue
-				fi
+        if [ -e "variables" ]
+        then
+            source variables
+        fi
 
-				if [ "$fa_var_initializerName" == "$fa_var_completedInitializerName" ]
-				then
-					fa_func_log Info "The '${fa_var_initializerName}' initializer has already been completed, and will be skipped..."
-					fa_var_initCompleted="Yes"
-					break
-				fi
-			done
+        source apply
 
-			if [ "$fa_var_initCompleted" == "No" ]
-			then
-				fa_func_log Info "Executing the '${fa_var_initializerName}' initializer..."
-				echo "$fa_var_initializerName" >> ${fa_var_FA_ROOT}/status/completedInits
+        cd ${fa_var_FA_ROOT}
 
-				if [ -e "${fa_var_FA_ROOT}/operations/initializers/${fa_var_initializerName}" ]
-				then
-					source ${fa_var_FA_ROOT}/operations/initializers/${fa_var_initializerName} 2>&1
-				else
-					fa_func_log Error "The initializer '${fa_var_initializerName}' could not be found.\nExiting..."
-					exit 1
-				fi
+        # Replace any module-specific variables that may have been set:
+        fa_func_load_variables
 
-			fa_func_log Success "Initializer (${fa_var_directoryFullPath}) successfully executed..."
-
-			fi
-		done
-	done
+        fa_func_log Success "Module '${1}' successfully applied..."
+    fi
 }
 
 
 function fa_func_roles
 {
-	local fa_var_directoryFullPath fa_var_parentDirectoryFullPath fa_var_role fa_var_module fa_var_moduleDirectory
+    local fa_var_directory_full_path fa_var_parent_directory_full_path fa_var_role fa_var_module fa_var_module_directory
 
-	for fa_var_directoryFullPath in $fa_var_applicableDirectories
-	do fa_var_directoryFullPath="$(echo $fa_var_directoryFullPath | tr -d '[:space:]')"
+    for fa_var_directory_full_path in $fa_var_applicable_directories
+    do fa_var_directory_full_path="$(echo $fa_var_directory_full_path | tr -d '[:space:]')"
 
-		if [ -z "$fa_var_directoryFullPath" ]
-		then
-			continue
-		fi
+        if [ -z "$fa_var_directory_full_path" ]
+        then
+            continue
+        fi
 
+        fa_func_run_check ${fa_var_directory_full_path} "roles"
+        if [ "$fa_var_run" == "No" ]
+        then
+            fa_var_run="Yes"
+            continue
+        fi
 
-		# Check if this is a host or class directory:
-		fa_var_parentDirectoryFullPath="$(cd ${fa_var_directoryFullPath}/../ ; pwd)"
-		if [ "$(basename $fa_var_parentDirectoryFullPath)" == "classes" ]
-		then
-			# This is a class directory; check if an overriding host directory roles file exists:
-			if [ -e "${fa_var_directoryFullPath}/${fa_var_host}/override" ] && [ -e "${fa_var_directoryFullPath}/${fa_var_host}/roles" ]
-			then
-				# Overriding roles exist, so skip execution of these roles:
-				fa_func_log Info "The '$(basename ${fa_var_directoryFullPath})' class roles are being overridden by host-specific roles, and will therefore be skipped..."
-				continue
-			fi
-		else
-			# This is a host directory; skip module execution if a host-specific roles file doesn't exists:
-			if [ ! -e "${fa_var_directoryFullPath}/roles" ]
-			then
-				fa_func_log Info "No host-specific roles found for '${fa_var_host}'. Moving on..."
-				continue
-			fi
-		fi
+        for fa_var_role in ""$(cat ${fa_var_directory_full_path}/roles | tr '\n' ' ')""
+        do fa_var_role="$(echo $fa_var_role | tr -d '[:space:]')"
 
+            if [ -z "$fa_var_role" ]
+            then
+                continue
+            fi
 
-		for fa_var_role in ""$(cat ${fa_var_directoryFullPath}/roles | tr '\n' ' ')""
-		do fa_var_role="$(echo $fa_var_role | tr -d '[:space:]')"
+            if [ -e ${fa_var_FA_ROOT}/operations/roles/${fa_var_role} ]
+            then
+                fa_func_log Info "Applying role '${fa_var_role}'..."
 
-			if [ -z "$fa_var_role" ]
-			then
-				continue
-			fi
+                for fa_var_module in ""$(cat ${fa_var_FA_ROOT}/operations/roles/${fa_var_role} | tr '\n' ' ')""
+                do fa_var_module="$(echo $fa_var_module | tr -d '[:space:]')"
 
-			if [ -e ${fa_var_FA_ROOT}/operations/roles/${fa_var_role} ]
-			then
-				fa_func_log Info "Applying role '${fa_var_role}'..."
+                    if [ -z "$fa_var_module" ]
+                    then
+                        continue
+                    fi
 
-				for fa_var_module in ""$(cat ${fa_var_FA_ROOT}/operations/roles/${fa_var_role} | tr '\n' ' ')""
-				do fa_var_module="$(echo $fa_var_module | tr -d '[:space:]')"
+                    fa_func_run_module $fa_var_module
+                done
 
-					if [ -z "$fa_var_module" ]
-					then
-						continue
-					fi
-
-					fa_var_moduleDirectory="${fa_var_FA_ROOT}/operations/modules/${fa_var_module}"
-					if [ ! -e "${fa_var_moduleDirectory}" ]
-					then
-						fa_func_log Error "The module '${fa_var_module}' could not be found.\nExiting..."
-						exit 1
-					fi
-
-					cd $fa_var_moduleDirectory
-
-					fa_func_log Info "Applying module '${fa_var_module}'..."
-
-					if [ -e "variables" ]
-					then
-						source variables
-					fi
-
-					source apply 2>&1
-
-					fa_func_log Success "Module '${fa_var_module}' successfully applied..."
-
-					# Replace any module-specific variables that may have been set:
-					fa_func_loadVariables
-
-					cd ${fa_var_FA_ROOT}
-				done
-
-				fa_func_log Success "Role '${fa_var_role}' successfully applied..."
-			else
-				fa_func_log Error "The role '${fa_var_role}' could not be found.\nExiting..."
-				exit 1
-			fi
-		done
-	done
+                fa_func_log Success "Role '${fa_var_role}' successfully applied..."
+            else
+                fa_func_log Error "The role '${fa_var_role}' could not be found.\nExiting..."
+                exit 1
+            fi
+        done
+    done
 }
 
 
 function fa_func_modules
 {
-	local fa_var_directoryFullPath fa_var_parentDirectoryFullPath fa_var_module fa_var_moduleDirectory
+    local fa_var_directory_full_path fa_var_parent_directory_full_path fa_var_module fa_var_module_directory
 
-	for fa_var_directoryFullPath in $fa_var_applicableDirectories
-	do fa_var_directoryFullPath="$(echo $fa_var_directoryFullPath | tr -d '[:space:]')"
+    for fa_var_directory_full_path in $fa_var_applicable_directories
+    do fa_var_directory_full_path="$(echo $fa_var_directory_full_path | tr -d '[:space:]')"
 
-		if [ -z "$fa_var_directoryFullPath" ]
-		then
-			continue
-		fi
+        if [ -z "$fa_var_directory_full_path" ]
+        then
+            continue
+        fi
 
+        fa_func_run_check ${fa_var_directory_full_path} "modules"
+        if [ "$fa_var_run" == "No" ]
+        then
+            fa_var_run="Yes"
+            continue
+        fi
 
-		# Check if this is a host or class directory:
-		fa_var_parentDirectoryFullPath="$(cd ${fa_var_directoryFullPath}/../ ; pwd)"
-		if [ "$(basename $fa_var_parentDirectoryFullPath)" == "classes" ]
-		then
-			# This is a class directory; check if an overriding host directory modules file exists:
-			if [ -e "${fa_var_directoryFullPath}/${fa_var_host}/override" ] && [ -e "${fa_var_directoryFullPath}/${fa_var_host}/modules" ]
-			then
-				# Overriding modules exist, so skip execution of these modules:
-				fa_func_log Info "The '$(basename ${fa_var_directoryFullPath})' class modules are being overridden by host-specific modules, and will therefore be skipped..."
-				continue
-			fi
-		else
-			# This is a host directory; skip module execution if a host-specific modules file doesn't exists:
-			if [ ! -e "${fa_var_directoryFullPath}/modules" ]
-			then
-				fa_func_log Info "No host-specific modules found for '${fa_var_host}'. Moving on..."
-				continue
-			fi
-		fi
+        for fa_var_module in ""$(cat ${fa_var_directory_full_path}/modules | tr '\n' ' ')""
+        do fa_var_module="$(echo $fa_var_module | tr -d '[:space:]')"
 
+            if [ -z "$fa_var_module" ]
+            then
+                continue
+            fi
 
-		for fa_var_module in ""$(cat ${fa_var_directoryFullPath}/modules | tr '\n' ' ')""
-		do fa_var_module="$(echo $fa_var_module | tr -d '[:space:]')"
-
-			if [ -z "$fa_var_module" ]
-			then
-				continue
-			fi
-
-			fa_var_moduleDirectory="${fa_var_FA_ROOT}/operations/modules/${fa_var_module}"
-			if [ ! -e "${fa_var_moduleDirectory}" ]
-			then
-				fa_func_log Error "The module '${fa_var_module}' could not be found.\nExiting..."
-				exit 1
-			fi
-
-			cd $fa_var_moduleDirectory
-
-			fa_func_log Info "Applying module '${fa_var_module}'..."
-
-			if [ -e "variables" ]
-			then
-				source variables
-			fi
-
-			source apply 2>&1
-
-			fa_func_log Success "Module '${fa_var_module}' successfully applied..."
-
-			# Replace any module-specific variables that may have been set:
-			fa_func_loadVariables
-
-			cd ${fa_var_FA_ROOT}
-		done
-	done
+            fa_func_run_module $fa_var_module
+        done
+    done
 }
 
+
+
+# Check for incompatible configuration settings:
+if [ "$fa_var_AUTOMATIC_FETCH" != "true" ]
+then
+    if [ "$fa_var_EXECUTE_ON_CHANGE" == "true" ] || [ "$fa_var_EXECUTE_IF_MODIFIED" == "true" ]
+    then
+        fa_func_log Error "There is an error in your Fetch Apply configuration file. If you wish to set\n'fa_var_EXECUTE_ON_CHANGE' or 'fa_var_EXECUTE_IF_MODIFIED' equal to 'true', then\nyou must also set 'fa_var_AUTOMATIC_FETCH' equal to 'true'.\nExiting..."
+        exit 1
+    fi
+fi
+
+if [ "$fa_var_EXECUTE_IF_MODIFIED" == "true" ]
+then
+    if [ "$fa_var_EXECUTE_ON_CHANGE" != "true" ]
+    then
+        fa_func_log Error "There is an error in your Fetch Apply configuration file. If you set\n'fa_var_EXECUTE_IF_MODIFIED' equal to 'true', then you must also set\n'fa_var_EXECUTE_ON_CHANGE' equal to 'true'.\nExiting..."
+        exit 1
+    fi
+fi
 
 
 # Parse command-line arguments:
 for fa_var_argument in "$@"
 do
-	if [ "$fa_var_argument" == "--help" ]
-	then
-		fa_func_usage
-		exit 0
-	elif [ "$fa_var_argument" == "--no-fetch" ]
-	then
-		fa_var_fetch="No"
-	elif [ "$fa_var_argument" == "--force" ]
-	then
-		fa_var_force="Yes"
-	elif [ "$fa_var_argument" == "--quieter" ]
-	then
-		fa_var_quiet="Yes"
-	elif [ "$fa_var_argument" == "fetch" ]
-	then
-		if [ -z "$fa_var_cmd" ]
-		then
-			fa_var_cmd="$fa_var_argument"
-		else
-			fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
-			exit 0
-		fi
-	elif [ "$fa_var_argument" == "recover" ]
-	then
-		if [ -z "$fa_var_cmd" ]
-		then
-			fa_var_cmd="$fa_var_argument"
-		else
-			fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
-			exit 0
-		fi
-	elif [ "$fa_var_argument" == "pause" ]
-	then
-		if [ -z "$fa_var_cmd" ]
-		then
-			fa_var_cmd="$fa_var_argument"
-		else
-			fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
-			exit 0
-		fi
-	elif [ "$fa_var_argument" == "resume" ]
-	then
-		if [ -z "$fa_var_cmd" ]
-		then
-			fa_var_cmd="$fa_var_argument"
-		else
-			fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
-			exit 0
-		fi
-	elif [ "$fa_var_argument" == "list-classes-to-run" ]
-	then
-		if [ -z "$fa_var_cmd" ]
-		then
-			fa_var_cmd="$fa_var_argument"
-		else
-			fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
-			exit 0
-		fi
-	elif [ "$fa_var_argument" == "list-classes" ]
-	then
-		if [ -z "$fa_var_cmd" ]
-		then
-			fa_var_cmd="$fa_var_argument"
-		else
-			fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
-			exit 0
-		fi
-	elif [ "$fa_var_argument" == "list-modules" ]
-	then
-		if [ -z "$fa_var_cmd" ]
-		then
-			fa_var_cmd="$fa_var_argument"
-		else
-			fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
-			exit 0
-		fi
-	elif [ "$fa_var_argument" == "list-roles" ]
-	then
-		if [ -z "$fa_var_cmd" ]
-		then
-			fa_var_cmd="$fa_var_argument"
-		else
-			fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
-			exit 0
-		fi
-	elif [ "$fa_var_argument" == "clear-inits" ]
-	then
-		if [ -z "$fa_var_cmd" ]
-		then
-			fa_var_cmd="$fa_var_argument"
-		else
-			fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
-			exit 0
-		fi
-	elif [ "$fa_var_argument" == "reset" ]
-	then
-		if [ -z "$fa_var_cmd" ]
-		then
-			fa_var_cmd="$fa_var_argument"
-		else
-			fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
-			exit 0
-		fi
-	elif [ "$fa_var_argument" == "run" ]
-	then
-		if [ -z "$fa_var_cmd" ]
-		then
-			fa_var_cmd="$fa_var_argument"
-		else
-			fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
-			exit 0
-		fi
-	else
-		if [ "$fa_var_cmd" == "run" ]
-		then
-			if [ -z "$fa_var_cmd_arg" ]
-			then
-				fa_var_cmd_arg="$fa_var_argument"
-			else
-				fa_func_log Error "Please only specify one module to run."
-				exit 0
-			fi
-		else
-			fa_func_log Error "'${fa_var_argument}' is not a recognized option or command.\nRun 'fa --help' for proper usage instructions."
-			exit 0
-		fi
-	fi
+    if [ "$fa_var_argument" == "--help" ]
+    then
+        fa_func_usage
+        exit 0
+    elif [ "$fa_var_argument" == "--no-fetch" ]
+    then
+        fa_var_AUTOMATIC_FETCH="false"
+    elif [ "$fa_var_argument" == "--force" ]
+    then
+        fa_var_force="Yes"
+    elif [ "$fa_var_argument" == "--quieter" ]
+    then
+        fa_var_quiet="Yes"
+    elif [ "$fa_var_argument" == "fetch" ]
+    then
+        if [ -z "$fa_var_cmd" ]
+        then
+            fa_var_cmd="$fa_var_argument"
+        else
+            fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
+            exit 0
+        fi
+    elif [ "$fa_var_argument" == "recover" ]
+    then
+        if [ -z "$fa_var_cmd" ]
+        then
+            fa_var_cmd="$fa_var_argument"
+        else
+            fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
+            exit 0
+        fi
+    elif [ "$fa_var_argument" == "pause" ]
+    then
+        if [ -z "$fa_var_cmd" ]
+        then
+            fa_var_cmd="$fa_var_argument"
+        else
+            fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
+            exit 0
+        fi
+    elif [ "$fa_var_argument" == "resume" ]
+    then
+        if [ -z "$fa_var_cmd" ]
+        then
+            fa_var_cmd="$fa_var_argument"
+        else
+            fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
+            exit 0
+        fi
+    elif [ "$fa_var_argument" == "list-classes-to-run" ]
+    then
+        if [ -z "$fa_var_cmd" ]
+        then
+            fa_var_cmd="$fa_var_argument"
+        else
+            fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
+            exit 0
+        fi
+    elif [ "$fa_var_argument" == "list-classes" ]
+    then
+        if [ -z "$fa_var_cmd" ]
+        then
+            fa_var_cmd="$fa_var_argument"
+        else
+            fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
+            exit 0
+        fi
+    elif [ "$fa_var_argument" == "list-modules" ]
+    then
+        if [ -z "$fa_var_cmd" ]
+        then
+            fa_var_cmd="$fa_var_argument"
+        else
+            fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
+            exit 0
+        fi
+    elif [ "$fa_var_argument" == "list-roles" ]
+    then
+        if [ -z "$fa_var_cmd" ]
+        then
+            fa_var_cmd="$fa_var_argument"
+        else
+            fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
+            exit 0
+        fi
+    elif [ "$fa_var_argument" == "clear-inits" ]
+    then
+        if [ -z "$fa_var_cmd" ]
+        then
+            fa_var_cmd="$fa_var_argument"
+        else
+            fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
+            exit 0
+        fi
+    elif [ "$fa_var_argument" == "reset" ]
+    then
+        if [ -z "$fa_var_cmd" ]
+        then
+            fa_var_cmd="$fa_var_argument"
+        else
+            fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
+            exit 0
+        fi
+    elif [ "$fa_var_argument" == "run" ]
+    then
+        if [ -z "$fa_var_cmd" ]
+        then
+            fa_var_cmd="$fa_var_argument"
+        else
+            fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
+            exit 0
+        fi
+    else
+        if [ "$fa_var_cmd" == "run" ]
+        then
+            if [ -z "$fa_var_cmd_arg" ]
+            then
+                fa_var_cmd_arg="$fa_var_argument"
+            else
+                fa_func_log Error "Please only specify one module to run."
+                exit 0
+            fi
+        else
+            fa_func_log Error "'${fa_var_argument}' is not a recognized option or command.\nRun 'fa --help' for proper usage instructions."
+            exit 0
+        fi
+    fi
 done
 
 
 if [ "$fa_var_cmd" == "fetch" ]
 then
-	fa_func_gitFetch
+    fa_func_fetch
 elif [ "$fa_var_cmd" == "recover" ]
 then
-	rm $fa_var_lockFile
-	fa_func_log Success "Lock file successfully removed..."
+    rm $fa_var_lock_file
+    fa_func_log Success "Run lock successfully removed..."
 elif [ "$fa_var_cmd" == "pause" ]
 then
-	touch $fa_var_pauseFile
-	fa_func_log Success "Fetch Apply successfully paused..."
+    touch $fa_var_pause_file
+    fa_func_log Success "Fetch Apply successfully paused..."
 elif [ "$fa_var_cmd" == "resume" ]
 then
-	rm $fa_var_pauseFile
-	fa_func_log Success "Fetch Apply successfully resumed..."
+    rm $fa_var_pause_file
+    fa_func_log Success "Fetch Apply successfully resumed..."
 elif [ "$fa_var_cmd" == "list-classes-to-run" ]
 then
-	fa_func_identifyApplicableClasses
+    fa_func_identify_applicable_classes
 elif [ "$fa_var_cmd" == "list-classes" ]
 then
-	ls -1 "${fa_var_FA_ROOT}/operations/classes"
+    ls -1 "${fa_var_FA_ROOT}/operations/classes"
 elif [ "$fa_var_cmd" == "list-modules" ]
 then
-	ls -1 "${fa_var_FA_ROOT}/operations/modules"
+    ls -1 "${fa_var_FA_ROOT}/operations/modules"
 elif [ "$fa_var_cmd" == "list-roles" ]
 then
-	ls -1 "${fa_var_FA_ROOT}/operations/roles"
+    ls -1 "${fa_var_FA_ROOT}/operations/roles"
 elif [ "$fa_var_cmd" == "clear-inits" ]
 then
-	echo "" > ${fa_var_FA_ROOT}/status/completedInits
-	fa_func_log Success "Completed initializers cache successfully cleared..."
+    echo "" > ${fa_var_FA_ROOT}/status/completed-inits
+    fa_func_log Success "Completed initializers cache successfully cleared..."
 elif [ "$fa_var_cmd" == "reset" ]
 then
-	cd ${fa_var_FA_ROOT}/operations
-	git fetch origin
-	git reset --hard origin
-	git clean -dfx
-	fa_func_log Success "Operations repository successfully reset..."
+    cd ${fa_var_FA_ROOT}/operations
+    git fetch origin
+    git reset --hard origin
+    git clean -dfx
+    fa_func_log Success "Operations repository successfully reset..."
 elif [ "$fa_var_cmd" == "run" ]
 then
-	if [ -n "$fa_var_cmd_arg" ]
-	then
-		cd ${fa_var_FA_ROOT}
+    if [ -n "$fa_var_cmd_arg" ]
+    then
+        cd ${fa_var_FA_ROOT}
 
-		touch $fa_var_lockFile
+        touch $fa_var_lock_file
 
-		fa_func_logTrim
-		fa_func_gitFetch
+        fa_func_log_trim
+        fa_func_fetch
 
-		trap fa_func_handleError ERR
-		trap fa_func_handleExit EXIT
+        trap fa_func_handle_error ERR
+        trap fa_func_handle_exit EXIT
 
-		fa_func_log Info "Detecting applicable code..."
-		fa_func_identifyApplicableClasses
+        fa_func_log Info "Detecting applicable classes..."
+        fa_func_identify_applicable_classes
 
-		fa_func_log Info "Loading host-specific variables..."
-		fa_func_loadVariables
+        fa_func_log Info "Loading applicable variables..."
+        fa_func_load_variables
 
-		fa_var_moduleDirectory="${fa_var_FA_ROOT}/operations/modules/${fa_var_cmd_arg}"
-		if [ -e "${fa_var_moduleDirectory}" ]
-		then
-			cd $fa_var_moduleDirectory
+        fa_func_log Info "Loading ad hoc module..."
+        fa_func_run_module $fa_var_cmd_arg
 
-			fa_func_log Info "Applying module '${fa_var_cmd_arg}' ad hoc..."
+        rm $fa_var_lock_file
 
-			if [ -e "variables" ]
-			then
-				source variables
-			fi
-
-			source apply 2>&1
-
-			fa_func_log Success "Module '${fa_var_cmd_arg}' successfully applied ad hoc..."
-		else
-			fa_func_log Error "The module '${fa_var_cmd_arg}' could not be found.\nExiting..."
-			exit 1
-		fi
-
-		rm $fa_var_lockFile
-
-		fa_func_log Success "All done."
-		exit 0
-	else
-		fa_func_log Error "Please specify a module to run."
-		exit 0
-	fi
+        fa_func_log Success "All done."
+        exit 0
+    else
+        fa_func_log Error "Please specify a module to run."
+        exit 0
+    fi
 elif [ "$fa_var_cmd" == "" ]
 then
-	if [ -e "$fa_var_lockFile" ]
-	then
-		if [ "$fa_var_force" == "No" ]
-		then
-			if [ "$fa_var_IGNORE_ERRORS" == "true" ]
-			then
-				fa_func_log Warning "Ignoring the lock file..."
-			else
-				fa_func_log Error "Lock file found. This means that an error occurred during\na previous execution. You may remove this lock file by\nrunning 'fa recover'.\nExiting..."
-				exit 1
-			fi
-		fi
-	fi
+    if [ -e "$fa_var_lock_file" ]
+    then
+        if [ "$fa_var_force" == "No" ]
+        then
+            if [ "$fa_var_IGNORE_ERRORS" == "true" ]
+            then
+                fa_func_log Warning "Ignoring the lock file..."
+            else
+                fa_func_log Error "Lock file found. This means that an error occurred during\na previous execution. You may remove this lock file by\nrunning 'fa recover'.\nExiting..."
+                exit 1
+            fi
+        fi
+    fi
 
-	if [ -e "$fa_var_pauseFile" ]
-	then
-		if [ "$fa_var_force" == "No" ]
-		then
-			fa_func_log Warning "Pause file found. This means that a hold has been manually\nplaced on execution. You may remove this pause file by\nrunning 'fa resume'.\nExiting..."
-			exit 0
-		fi
-	fi
+    if [ -e "$fa_var_pause_file" ]
+    then
+        if [ "$fa_var_force" == "No" ]
+        then
+            fa_func_log Warning "Pause file found. This means that a hold has been manually\nplaced on execution. You may remove this pause file by\nrunning 'fa resume'.\nExiting..."
+            exit 0
+        fi
+    fi
 
 
-	cd ${fa_var_FA_ROOT}
+    cd ${fa_var_FA_ROOT}
 
-	touch $fa_var_lockFile
+    touch $fa_var_lock_file
 
-	fa_func_logTrim
-	fa_func_gitFetch
+    fa_func_log_trim
+    fa_func_fetch
 
-	trap fa_func_handleError ERR
-	trap fa_func_handleExit EXIT
+    trap fa_func_handle_error ERR
+    trap fa_func_handle_exit EXIT
 
-	fa_func_log Info "Detecting applicable code..."
-	fa_func_identifyApplicableClasses
+    fa_func_log Info "Detecting applicable classes..."
+    fa_func_identify_applicable_classes
 
-	fa_func_log Info "Loading host-specific variables..."
-	fa_func_loadVariables
+    fa_func_log Info "Loading applicable variables..."
+    fa_func_load_variables
 
-	fa_func_log Info "Running Initializers..."
-	fa_func_initializers
+    fa_func_log Info "Applying Patches..."
+    fa_func_patches
 
-	fa_func_log Info "Applying Roles..."
-	fa_func_roles
+    fa_func_log Info "Running Initializers..."
+    fa_func_initializers
 
-	fa_func_log Info "Applying Modules..."
-	fa_func_modules
+    fa_func_log Info "Applying Roles..."
+    fa_func_roles
 
-	rm $fa_var_lockFile
+    fa_func_log Info "Applying Modules..."
+    fa_func_modules
 
-	fa_func_log Success "All done."
+    rm $fa_var_lock_file
+
+    cd ${fa_var_FA_ROOT}
+
+    fa_func_log Success "All done."
 fi
