@@ -28,6 +28,7 @@ fa_var_applicable_directories=""
 fa_var_pause_file="${fa_var_FA_ROOT}/status/pause"
 fa_var_lock_file="${fa_var_FA_ROOT}/status/lock"
 
+fa_var_mock_run="No"
 fa_var_force="No"
 fa_var_quiet="No"
 
@@ -84,7 +85,7 @@ function fa_func_log_trim
 {
     fa_func_log Info "Inspecting Fetch Apply log..."
 
-    if [ "$(cat $fa_var_LOG_FILE_PATH | grep -c '')" -gt "$fa_var_MAX_LOG_LENGTH" ]
+    if [ "$(cat $fa_var_LOG_FILE_PATH | wc -l)" -ge "$fa_var_MAX_LOG_LENGTH" ]
     then
         if [ -e "${fa_var_LOG_FILE_PATH}.old" ]
         then
@@ -95,6 +96,11 @@ function fa_func_log_trim
         touch ${fa_var_LOG_FILE_PATH}
 
         fa_func_log Success "Fetch Apply log successfully trimmed..."
+    fi
+
+    if [ "$(cat ${fa_var_FA_ROOT}/status/completed-runs | wc -l)" -ge "$fa_var_MAX_LOG_LENGTH" ]
+    then
+        cat ${fa_var_FA_ROOT}/status/completed-runs | tail -n$((fa_var_MAX_LOG_LENGTH - 1)) > ${fa_var_FA_ROOT}/status/completed-runs
     fi
 }
 
@@ -122,30 +128,40 @@ function fa_func_handle_exit
 function fa_func_usage
 {
 cat <<EOF
-fa - transparent server configuration and management
+fa - transparent system configuration and management
 
 Usage:
   fa [options] [command]
 
 Options:
+  --fake                   Preview a command without actually applying any operations
+  --force                  Run even if a pause or run lock is set
   --help                   Show this help message
   --no-fetch               Don't fetch the inventory before running the command
-  --force                  Run even if a pause or run lock is set
   --quieter                Suppress log messages
 
 Commands:
+  clear-inits              Allow completed initializers to run one more time
   fetch                    Update local operations repository by fetching from upstream
-  run <module name>        Run a specific module ad hoc (--force automatically set)
-  pause                    Set the pause lock to avoid periodic runs while debugging
-  resume                   Resume periodic runs after a pause (unset the pause lock)
-  recover                  Remove run lock after a failure
-  clear-inits              Allow completed initializers to run once more
-  reset                    Reset/clean operations repository to match the remote origin
-  list-classes-to-run      List all classes applicable to the local system
   list-classes             List all classes
   list-modules             List all modules
   list-roles               List all roles
+  pause                    Set the pause lock to avoid periodic runs while debugging
+  recover                  Remove run lock after a failure
+  reset                    Reset/clean operations repository to match the remote origin
+  resume                   Resume periodic runs after a pause (unset the pause lock)
+  run <module name>        Run a specific module ad hoc (--force automatically set)
+  status                   Display detailed Fetch Apply status information
 EOF
+}
+
+
+function fa_func_source
+{
+    if [ "$fa_var_mock_run" == "No" ]
+    then
+        source "$1"
+    fi
 }
 
 
@@ -259,7 +275,7 @@ function fa_func_identify_applicable_classes
 
     if [ -z "$fa_var_applicable_directories" ]
     then
-        fa_func_log Warning "No applicable classes found for this server.\nExiting..."
+        fa_func_log Warning "No applicable classes found for this host.\nExiting..."
         exit 0
     fi
 }
@@ -269,7 +285,7 @@ function fa_func_load_variables
 {
     local fa_var_directory
 
-    source ${fa_var_FA_ROOT}/operations/variables
+    fa_func_source ${fa_var_FA_ROOT}/operations/variables
 
     for fa_var_directory in $fa_var_applicable_directories
     do fa_var_directory="$(echo $fa_var_directory | tr -d '[:space:]')"
@@ -281,7 +297,7 @@ function fa_func_load_variables
 
         if [ -e "${fa_var_directory}/variables" ]
         then
-            source ${fa_var_directory}/variables
+            fa_func_source ${fa_var_directory}/variables
         fi
     done
 
@@ -374,13 +390,16 @@ function fa_func_patches
             if [ "$fa_var_patch_completed" == "No" ]
             then
                 fa_func_log Info "Applying patch: '${fa_var_patch_name}'..."
-                echo "$fa_var_patch_name" >> ${fa_var_FA_ROOT}/status/completed-patches
+                if [ "$fa_var_mock_run" == "No" ]
+                then
+                    echo "$fa_var_patch_name" >> ${fa_var_FA_ROOT}/status/completed-patches
+                fi
 
                 cd ${fa_var_directory_full_path}/patches
 
                 if [ -e "${fa_var_directory_full_path}/patches/${fa_var_patch_name}" ]
                 then
-                    source ${fa_var_directory_full_path}/patches/${fa_var_patch_name}
+                    fa_func_source ${fa_var_directory_full_path}/patches/${fa_var_patch_name}
                 else
                     fa_func_log Error "The patch '${fa_var_patch_name}' could not be found.\nExiting..."
                     exit 1
@@ -464,13 +483,16 @@ function fa_func_initializers
             if [ "$fa_var_initializer_completed" == "No" ]
             then
                 fa_func_log Info "Executing the '${fa_var_initializer_name}' initializer..."
-                echo "$fa_var_initializer_name" >> ${fa_var_FA_ROOT}/status/completed-initializers
+                if [ "$fa_var_mock_run" == "No" ]
+                then
+                    echo "$fa_var_initializer_name" >> ${fa_var_FA_ROOT}/status/completed-initializers
+                fi
 
                 cd ${fa_var_FA_ROOT}/operations/initializers
 
                 if [ -e "${fa_var_FA_ROOT}/operations/initializers/${fa_var_initializer_name}" ]
                 then
-                    source ${fa_var_FA_ROOT}/operations/initializers/${fa_var_initializer_name}
+                    fa_func_source ${fa_var_FA_ROOT}/operations/initializers/${fa_var_initializer_name}
                 else
                     fa_func_log Error "The initializer '${fa_var_initializer_name}' could not be found.\nExiting..."
                     exit 1
@@ -517,10 +539,10 @@ function fa_func_run_module
 
         if [ -e "variables" ]
         then
-            source variables
+            fa_func_source variables
         fi
 
-        source apply
+        fa_func_source apply
 
         cd ${fa_var_FA_ROOT}
 
@@ -641,129 +663,52 @@ fi
 # Parse command-line arguments:
 for fa_var_argument in "$@"
 do
-    if [ "$fa_var_argument" == "--help" ]
+    if [ "$fa_var_argument" == "--fake" ]
+    then
+        fa_var_mock_run="Yes"
+        fa_func_log Warning "Warning! This is a mock run.\nNo initializers, modules, or patches are actually being applied.\n"
+    elif [ "$fa_var_argument" == "--force" ]
+    then
+        fa_var_force="Yes"
+    elif [ "$fa_var_argument" == "--help" ]
     then
         fa_func_usage
         exit 0
     elif [ "$fa_var_argument" == "--no-fetch" ]
     then
         fa_var_AUTOMATIC_FETCH="false"
-    elif [ "$fa_var_argument" == "--force" ]
-    then
-        fa_var_force="Yes"
     elif [ "$fa_var_argument" == "--quieter" ]
     then
         fa_var_quiet="Yes"
-    elif [ "$fa_var_argument" == "fetch" ]
+    elif [ "$fa_var_cmd" == "run" ]
     then
-        if [ -z "$fa_var_cmd" ]
+        if [ -z "$fa_var_cmd_arg" ]
         then
-            fa_var_cmd="$fa_var_argument"
+            fa_var_cmd_arg="$fa_var_argument"
         else
-            fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
-            exit 0
-        fi
-    elif [ "$fa_var_argument" == "recover" ]
-    then
-        if [ -z "$fa_var_cmd" ]
-        then
-            fa_var_cmd="$fa_var_argument"
-        else
-            fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
-            exit 0
-        fi
-    elif [ "$fa_var_argument" == "pause" ]
-    then
-        if [ -z "$fa_var_cmd" ]
-        then
-            fa_var_cmd="$fa_var_argument"
-        else
-            fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
-            exit 0
-        fi
-    elif [ "$fa_var_argument" == "resume" ]
-    then
-        if [ -z "$fa_var_cmd" ]
-        then
-            fa_var_cmd="$fa_var_argument"
-        else
-            fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
-            exit 0
-        fi
-    elif [ "$fa_var_argument" == "list-classes-to-run" ]
-    then
-        if [ -z "$fa_var_cmd" ]
-        then
-            fa_var_cmd="$fa_var_argument"
-        else
-            fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
-            exit 0
-        fi
-    elif [ "$fa_var_argument" == "list-classes" ]
-    then
-        if [ -z "$fa_var_cmd" ]
-        then
-            fa_var_cmd="$fa_var_argument"
-        else
-            fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
-            exit 0
-        fi
-    elif [ "$fa_var_argument" == "list-modules" ]
-    then
-        if [ -z "$fa_var_cmd" ]
-        then
-            fa_var_cmd="$fa_var_argument"
-        else
-            fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
-            exit 0
-        fi
-    elif [ "$fa_var_argument" == "list-roles" ]
-    then
-        if [ -z "$fa_var_cmd" ]
-        then
-            fa_var_cmd="$fa_var_argument"
-        else
-            fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
-            exit 0
-        fi
-    elif [ "$fa_var_argument" == "clear-inits" ]
-    then
-        if [ -z "$fa_var_cmd" ]
-        then
-            fa_var_cmd="$fa_var_argument"
-        else
-            fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
-            exit 0
-        fi
-    elif [ "$fa_var_argument" == "reset" ]
-    then
-        if [ -z "$fa_var_cmd" ]
-        then
-            fa_var_cmd="$fa_var_argument"
-        else
-            fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
-            exit 0
-        fi
-    elif [ "$fa_var_argument" == "run" ]
-    then
-        if [ -z "$fa_var_cmd" ]
-        then
-            fa_var_cmd="$fa_var_argument"
-        else
-            fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
+            fa_func_log Error "Please only specify one module to run at a time."
             exit 0
         fi
     else
-        if [ "$fa_var_cmd" == "run" ]
-        then
-            if [ -z "$fa_var_cmd_arg" ]
+        fa_var_commands=( clear-inits fetch list-classes list-modules list-roles pause recover reset resume run status )
+        fa_var_match_found="false"
+        for fa_var_command in "${fa_var_commands[@]}"
+        do
+            if [ "$fa_var_argument" == "$fa_var_command" ]
             then
-                fa_var_cmd_arg="$fa_var_argument"
-            else
-                fa_func_log Error "Please only specify one module to run."
-                exit 0
+                if [ -z "$fa_var_cmd" ]
+                then
+                    fa_var_cmd="$fa_var_command"
+                    fa_var_match_found="true"
+                    break
+                else
+                    fa_func_log Error "Too many commands provided.\nRun 'fa --help' for proper usage instructions."
+                    exit 0
+                fi
             fi
-        else
+        done
+        if [ "$fa_var_match_found" == "false" ]
+        then
             fa_func_log Error "'${fa_var_argument}' is not a recognized option or command.\nRun 'fa --help' for proper usage instructions."
             exit 0
         fi
@@ -771,24 +716,17 @@ do
 done
 
 
-if [ "$fa_var_cmd" == "fetch" ]
+# Run the commands:
+if [ "$fa_var_cmd" == "clear-inits" ]
+then
+    if [ "$fa_var_mock_run" == "No" ]
+    then
+        echo "" > ${fa_var_FA_ROOT}/status/completed-inits
+    fi
+    fa_func_log Success "Completed initializers cache successfully cleared..."
+elif [ "$fa_var_cmd" == "fetch" ]
 then
     fa_func_fetch
-elif [ "$fa_var_cmd" == "recover" ]
-then
-    rm $fa_var_lock_file
-    fa_func_log Success "Run lock successfully removed..."
-elif [ "$fa_var_cmd" == "pause" ]
-then
-    touch $fa_var_pause_file
-    fa_func_log Success "Fetch Apply successfully paused..."
-elif [ "$fa_var_cmd" == "resume" ]
-then
-    rm $fa_var_pause_file
-    fa_func_log Success "Fetch Apply successfully resumed..."
-elif [ "$fa_var_cmd" == "list-classes-to-run" ]
-then
-    fa_func_identify_applicable_classes
 elif [ "$fa_var_cmd" == "list-classes" ]
 then
     ls -1 "${fa_var_FA_ROOT}/operations/classes"
@@ -798,10 +736,19 @@ then
 elif [ "$fa_var_cmd" == "list-roles" ]
 then
     ls -1 "${fa_var_FA_ROOT}/operations/roles"
-elif [ "$fa_var_cmd" == "clear-inits" ]
+elif [ "$fa_var_cmd" == "pause" ]
 then
-    echo "" > ${fa_var_FA_ROOT}/status/completed-inits
-    fa_func_log Success "Completed initializers cache successfully cleared..."
+    touch $fa_var_pause_file
+    fa_func_log Success "Fetch Apply successfully paused..."
+elif [ "$fa_var_cmd" == "recover" ]
+then
+    if [ -e "$fa_var_lock_file" ]
+    then
+        rm -f $fa_var_lock_file
+        fa_func_log Success "Run lock successfully removed..."
+    else
+        fa_func_log Success "Run lock wasn't activated..."
+    fi
 elif [ "$fa_var_cmd" == "reset" ]
 then
     cd ${fa_var_FA_ROOT}/operations
@@ -809,6 +756,15 @@ then
     git reset --hard origin
     git clean -dfx
     fa_func_log Success "Operations repository successfully reset..."
+elif [ "$fa_var_cmd" == "resume" ]
+then
+    if [ -e "$fa_var_pause_file" ]
+    then
+        rm -f $fa_var_pause_file
+        fa_func_log Success "Fetch Apply successfully resumed..."
+    else
+        fa_func_log Success "Fetch Apply was never paused..."
+    fi
 elif [ "$fa_var_cmd" == "run" ]
 then
     if [ -n "$fa_var_cmd_arg" ]
@@ -840,6 +796,56 @@ then
         fa_func_log Error "Please specify a module to run."
         exit 0
     fi
+elif [ "$fa_var_cmd" == "status" ]
+then
+    if [ -e "$fa_var_LOG_FILE_PATH" ] && [ -n "$(cat $fa_var_LOG_FILE_PATH)" ]
+    then
+        fa_var_last_log_entry="$(tail -n1 $fa_var_LOG_FILE_PATH)"
+        fa_var_last_log_entry=($fa_var_last_log_entry)
+        fa_var_fetch_apply_last_run="${fa_var_last_log_entry[@]:0:7}"
+    else
+        fa_var_fetch_apply_last_run="Unknown"
+    fi
+
+    if [ -e /etc/cron.d/fa ] && [ -n "$(cat /etc/cron.d/fa)" ]
+    then
+        fa_var_last_line_cron="$(tail -n1 /etc/cron.d/fa)"
+        fa_var_cron_entry="${fa_var_last_line_cron%% root*}"
+    else
+        fa_var_cron_entry="Not Found"
+    fi
+
+    fa_func_log Success "Fetch Apply Status:"
+    echo ""
+
+    fa_func_log Info "This Device: ${fa_var_hostname}"
+    fa_func_log Info "Initializers Applied: $(cat ${fa_var_FA_ROOT}/status/completed-initializers | tr '\n' ' ')"
+    fa_func_log Info "Latest Patches Applied: $(cat ${fa_var_FA_ROOT}/status/completed-patches | tail -n3 | tr '\n' ' ')"
+    echo ""
+
+    if [ -e "$fa_var_pause_file" ]
+    then
+        fa_func_log Warning "Pause Lock: Set"
+    else
+        fa_func_log Info "Pause Lock: Unset"
+    fi
+    if [ -e "$fa_var_lock_file" ]
+    then
+        fa_func_log Warning "Run Lock: Set"
+    else
+        fa_func_log Info "Run Lock: Unset"
+    fi
+    echo ""
+
+    fa_func_log Info "Last Full Run: $(cat ${fa_var_FA_ROOT}/status/completed-runs | tail -n1)"
+    fa_func_log Info "Last Logged Activity: ${fa_var_fetch_apply_last_run}"
+    fa_func_log Info "Last Operations Repository Update: $(cd ${fa_var_FA_ROOT}/operations && git log -1 --pretty='%cd')"
+    fa_func_log Info "Cron Schedule: ${fa_var_cron_entry}"
+    echo ""
+
+    source ${fa_var_FA_ROOT}/iteration
+    fa_func_log Info "Fetch Apply Iteration: ${fa_var_UPGRADE_ITERATION}"
+    fa_func_log Info "Automated Upgrades Disabled: ${fa_var_DISABLE_AUTOMATED_UPGRADES}"
 elif [ "$fa_var_cmd" == "" ]
 then
     if [ -e "$fa_var_lock_file" ]
@@ -893,6 +899,11 @@ then
 
     fa_func_log Info "Applying Modules..."
     fa_func_modules
+
+    if [ "$fa_var_mock_run" == "No" ]
+    then
+        date >> ${fa_var_FA_ROOT}/status/completed-runs
+    fi
 
     rm $fa_var_lock_file
 

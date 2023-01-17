@@ -12,11 +12,11 @@ PURPLE="\033[0;35m"
 NO_COLOR="\033[0m"
 
 
-FA_REPOSITORY_URL="https://git.p5.vc/Priveasy/fetch-apply.git"
+FA_REPOSITORY_URL="https://source.priveasy.org/Priveasy/fetch-apply.git"
 
 INSTALLATION_PATH="/var/lib"
 LOG_FILE_PATH="/var/log/fetch-apply.log"
-OPERATIONS_REPOSITORY_URL="https://git.p5.vc/Priveasy/server-configurations.git"
+OPERATIONS_REPOSITORY_URL="https://source.priveasy.org/Priveasy/server-configurations.git"
 OPERATIONS_REPOSITORY_BRANCH="main"
 DEVICE_HOSTNAME="$(hostname)"
 CRONTAB_ENTRY="$(( RANDOM % 60 )) $(( RANDOM % 24 )) * * *"
@@ -61,7 +61,7 @@ Options and Default Values:
         Fetch Apply log location
     --device-hostname=${DEVICE_HOSTNAME}
         Hostname to use
-    --operations-repository-url=https://git.p5.vc/Priveasy/server-configurations.git
+    --operations-repository-url=https://source.priveasy.org/Priveasy/server-configurations.git
         URL to your operations (Fetch Apply configuration) repository
     --operations-repository-branch=main
         Branch of the operations repository to use
@@ -179,11 +179,11 @@ function interactive()
         LOG_FILE_PATH='/var/log/fetch-apply.log'
     fi
 
-    echo -e "\n\n${BLUE}What is your operations git repository URL?\n${CYAN}URL (https://git.p5.vc/Priveasy/server-configurations.git):${NO_COLOR}"
+    echo -e "\n\n${BLUE}What is your operations git repository URL?\n${CYAN}URL (https://source.priveasy.org/Priveasy/server-configurations.git):${NO_COLOR}"
     read OPERATIONS_REPOSITORY_URL
     if [ -z "$OPERATIONS_REPOSITORY_URL" ]
     then
-        OPERATIONS_REPOSITORY_URL="https://git.p5.vc/Priveasy/server-configurations.git"
+        OPERATIONS_REPOSITORY_URL="https://source.priveasy.org/Priveasy/server-configurations.git"
     fi
 
     echo -e "\n\n${BLUE}Which branch of the operations repository would you like to use?\n${CYAN}Branch (main):${NO_COLOR}"
@@ -211,9 +211,10 @@ function interactive()
 
 function upgrade()
 {
-    curl https://git.p5.vc/Priveasy/fetch-apply/raw/branch/main/iteration -o /tmp/iteration
-    source /tmp/iteration
-    rm -f /tmp/iteration
+    mkdir -p /tmp/fetch-apply-upgrade
+    curl https://source.priveasy.org/Priveasy/fetch-apply/raw/branch/main/iteration -o /tmp/fetch-apply-upgrade/iteration
+    source /tmp/fetch-apply-upgrade/iteration
+    rm -f /tmp/fetch-apply-upgrade/iteration
 
     fa_var_NEW_COMPATIBLE_UPGRADE_ITERATION="$fa_var_COMPATIBLE_UPGRADE_ITERATION"
 
@@ -226,14 +227,15 @@ function upgrade()
             echo -e "${GREEN}Beginning Automated Upgrade...${NO_COLOR}"
 
             echo -e "${PURPLE}Backing up files...${NO_COLOR}"
-            cp /etc/fetch-apply /tmp/fetch-apply
-            cp /etc/cron.d/fa /tmp/fa
-            cp ${fa_var_FA_ROOT}/status/completed-initializers /tmp/completed-initializers
-            cp ${fa_var_FA_ROOT}/status/completed-patches /tmp/completed-patches
-            cp $fa_var_LOG_FILE_PATH /tmp/fetch-apply.log
+            cp /etc/fetch-apply /tmp/fetch-apply-upgrade/fetch-apply
+            cp /etc/cron.d/fa /tmp/fetch-apply-upgrade/fa
+            cp ${fa_var_FA_ROOT}/status/completed-initializers /tmp/fetch-apply-upgrade/completed-initializers
+            cp ${fa_var_FA_ROOT}/status/completed-patches /tmp/fetch-apply-upgrade/completed-patches
+            cp ${fa_var_FA_ROOT}/status/completed-runs /tmp/fetch-apply-upgrade/completed-runs
+            cp $fa_var_LOG_FILE_PATH /tmp/fetch-apply-upgrade/fetch-apply.log
             if [ -e "${fa_var_LOG_FILE_PATH}.old" ]
             then
-                cp ${fa_var_LOG_FILE_PATH}.old /tmp/fetch-apply.log.old
+                cp ${fa_var_LOG_FILE_PATH}.old /tmp/fetch-apply-upgrade/fetch-apply.log.old
             fi
 
             INSTALLATION_PATH="${fa_var_FA_ROOT::-12}"
@@ -247,23 +249,27 @@ function upgrade()
             install
 
             echo -e "${PURPLE}Restoring backed-up files...${NO_COLOR}"
-            mv /tmp/fetch-apply /etc/fetch-apply
-            mv /tmp/fa /etc/cron.d/fa
-            mv /tmp/completed-initializers ${fa_var_FA_ROOT}/status/completed-initializers
-            mv /tmp/completed-patches ${fa_var_FA_ROOT}/status/completed-patches
-            mv /tmp/fetch-apply.log $fa_var_LOG_FILE_PATH
-            if [ -e "/tmp/fetch-apply.log.old" ]
+            mv /tmp/fetch-apply-upgrade/fetch-apply /etc/fetch-apply
+            mv /tmp/fetch-apply-upgrade/fa /etc/cron.d/fa
+            mv /tmp/fetch-apply-upgrade/completed-initializers ${fa_var_FA_ROOT}/status/completed-initializers
+            mv /tmp/fetch-apply-upgrade/completed-patches ${fa_var_FA_ROOT}/status/completed-patches
+            mv /tmp/fetch-apply-upgrade/completed-runs ${fa_var_FA_ROOT}/status/completed-runs
+            mv /tmp/fetch-apply-upgrade/fetch-apply.log $fa_var_LOG_FILE_PATH
+            if [ -e "/tmp/fetch-apply-upgrade/fetch-apply.log.old" ]
             then
-                mv /tmp/fetch-apply.log.old ${fa_var_LOG_FILE_PATH}.old
+                mv /tmp/fetch-apply-upgrade/fetch-apply.log.old ${fa_var_LOG_FILE_PATH}.old
             fi
+            rm -rf /tmp/fetch-apply-upgrade
 
             echo -e "$(date)\tFetch Apply Successfully Upgraded" >> $fa_var_LOG_FILE_PATH
             echo -e "${GREEN}Upgrade Complete!${NO_COLOR}"
         else
+            rm -rf /tmp/fetch-apply-upgrade
             echo -e "${YELLOW}Warning.\nYou have disabled automated upgrades within your Fetch Apply 'iteration' file.\nIf you wish to proceed, please set 'fa_var_DISABLE_AUTOMATED_UPGRADES=No'."
             exit 0
         fi
     else
+        rm -rf /tmp/fetch-apply-upgrade
         echo -e "${RED}Error. The Fetch Apply version currently installed on your system is\nincompatible with the latest version of Fetch Apply.\nTherefore, an automated upgrade cannot be performed."
         exit 1
     fi

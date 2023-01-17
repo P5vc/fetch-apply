@@ -1,6 +1,6 @@
 # Fetch Apply
 
-### Transparent Server Configuration and Management
+### Transparent System Configuration and Management
 
 ------------
 
@@ -32,26 +32,26 @@
 Fetch Apply is a simple system configuration and management framework designed for transparency, security, efficiency, and auditability. Fetch Apply has many, wonderful advantages over other, similar frameworks... here are just a few:
 
 - Written in Bash
-  - Fetch Apply is written entirely in Bash: the standard language behind most commandlines. This allows for streamlined management in the language natively supported by most server environments.
+  - Fetch Apply is written entirely in Bash: the standard language behind most commandlines. This allows for streamlined management in a language natively supported by most computing environments.
 - Small codebase
-  - Fetch Apply's entire codebase is minuscule—less than a thousand lines long—and powered by a single file. As a result, Fetch Apply is easily user-auditable, and capable of providing simple, yet powerful, server management... something that becomes unrealistic with other tools' large codebases and dependencies.
+  - Fetch Apply's entire codebase is minuscule—less than a thousand lines long—and powered by a single file. As a result, Fetch Apply is easily user-auditable, and capable of providing simple, yet powerful, system management... something that becomes unrealistic with other tools' large codebases and dependencies.
 - Standardized but customizable
   - Fetch Apply uses a standardized framework with simple terminology, making it easy to use and eliminating the learning curve. The code is simple and descriptive, meaning that Fetch Apply can be customized to suit your needs in a snap.
 - Powered by Git
   - Fetch Apply is powered by git, allowing systems administrators (or anyone else, should you choose to use a public repository) to view a complete history of all configurations, changes, and code introduced into their systems, thus improving security and accountability, and making troubleshooting easier than ever.
 - Basically agentless... unless you don't want it to be
-  - Fetch Apply does not require some hefty installation process that involves setting up services, reworking permissions, adding new users, etc. Instead, it takes the form of a simple bash script run periodically by cron. From there, it is your choice as to how "agentless" you would like Fetch Apply to be. You can have it poll a centralized server for new changes and updates consistently... or work quietly without even the need for an internet connection. Fetch Apply molds easily to fit your needs.
+  - Fetch Apply does not require some hefty installation process that involves setting up services, reworking permissions, adding new users, etc. Instead, it takes the form of a simple bash script run periodically via cron. From there, it is your choice as to how "agentless" you would like Fetch Apply to be. You can have it poll a centralized server for new changes and updates consistently... or work quietly without even the need for an internet connection. Fetch Apply molds easily to fit any use case.
 
 # Installation
 
 To install Fetch Apply on your system, use the following commands to download the installation script, and then run it:
 
 ```bash
-curl https://git.p5.vc/Priveasy/fetch-apply/raw/branch/main/install -o /tmp/install
+curl https://source.priveasy.org/Priveasy/fetch-apply/raw/branch/main/install -o /tmp/install
 sudo bash /tmp/install
 ```
 
-To install Fetch Apply non-interactively, you may supply your installation preferences via any number of commandline arguments, as outlined in the help message, below:
+To install Fetch Apply non-interactively, you may supply your installation preferences via any number of commandline arguments, as outlined in the help message:
 
 ```
 Fetch Apply Installation Script
@@ -72,7 +72,7 @@ Options and Default Values:
         Fetch Apply log location
     --device-hostname=${DEVICE_HOSTNAME}
         Hostname to use
-    --operations-repository-url=https://git.p5.vc/Priveasy/server-configurations.git
+    --operations-repository-url=https://source.priveasy.org/Priveasy/server-configurations.git
         URL to your operations (Fetch Apply configuration) repository
     --operations-repository-branch=main
         Branch of the operations repository to use
@@ -84,21 +84,21 @@ Options and Default Values:
 A non-interactive installation example:
 
 ```bash
-curl https://git.p5.vc/Priveasy/fetch-apply/raw/branch/main/install -o /tmp/install
+curl https://source.priveasy.org/Priveasy/fetch-apply/raw/branch/main/install -o /tmp/install
 sudo bash /tmp/install --operations-git-url=https://example.com/MyAccount/MyOperationsRepository.git --server-hostname=myServer
 ```
 
-If you wish to perform an automated Fetch Apply upgrade, try the following commands:
+To upgrade an existing Fetch Apply installation, you can use the following commands to automate the process:
 
 ```bash
-curl https://git.p5.vc/Priveasy/fetch-apply/raw/branch/main/install -o /tmp/install
+curl https://source.priveasy.org/Priveasy/fetch-apply/raw/branch/main/install -o /tmp/install
 sudo bash /tmp/install --upgrade
 ```
 
 To uninstall Fetch Apply, use the following commands:
 
 ```bash
-curl https://git.p5.vc/Priveasy/fetch-apply/raw/branch/main/install -o /tmp/install
+curl https://source.priveasy.org/Priveasy/fetch-apply/raw/branch/main/install -o /tmp/install
 sudo bash /tmp/install --uninstall
 ```
 
@@ -118,7 +118,7 @@ sudo fa
 
 Yup. That's it. If you want to run Fetch Apply manually, just type `fa` into your terminal... and you're done! Keep in mind, however, that Fetch Apply is designed to be run automatically by `cron` anyways, so you'll likely never even have a reason to run it manually!
 
-When run, `fa` will execute a `git pull` to grab the latest updates to your `operations` repository, and then apply any of the applicable `modules`, `patches`, or `initializers` as outlined therein.
+When run, `fa` will execute a `git pull` to grab the latest updates to your `operations` repository, and then apply any of the applicable `initializers`, `modules`, or `patches` as outlined therein.
 
 ## Advanced
 
@@ -129,29 +129,30 @@ Although Fetch Apply is designed to be simplistic and lightweight, it does also 
 ###### You can access this documentation by running `sudo fa --help`.
 
 ```
-fa - transparent server configuration and management
+fa - transparent system configuration and management
 
 Usage:
   fa [options] [command]
 
 Options:
+  --fake                   Preview a command without actually applying any operations
+  --force                  Run even if a pause or run lock is set
   --help                   Show this help message
   --no-fetch               Don't fetch the inventory before running the command
-  --force                  Run even if a pause or run lock is set
   --quieter                Suppress log messages
 
 Commands:
+  clear-inits              Allow completed initializers to run one more time
   fetch                    Update local operations repository by fetching from upstream
-  run <module name>        Run a specific module ad hoc (--force automatically set)
-  pause                    Set the pause lock to avoid periodic runs while debugging
-  resume                   Resume periodic runs after a pause (unset the pause lock)
-  recover                  Remove run lock after a failure
-  clear-inits              Allow completed initializers to run once more
-  reset                    Reset/clean operations repository to match the remote origin
-  list-classes-to-run      List all classes applicable to the local system
   list-classes             List all classes
   list-modules             List all modules
   list-roles               List all roles
+  pause                    Set the pause lock to avoid periodic runs while debugging
+  recover                  Remove run lock after a failure
+  reset                    Reset/clean operations repository to match the remote origin
+  resume                   Resume periodic runs after a pause (unset the pause lock)
+  run <module name>        Run a specific module ad hoc (--force automatically set)
+  status                   Display detailed Fetch Apply status information
 ```
 
 #### The full, Fetch Apply configuration file (with default values):
@@ -206,7 +207,7 @@ Fetch Apply works by fetching the desired system configuration from an "operatio
 
 ## Base Structure
 
-In order for Fetch Apply to understand your server configuration, you must start with (and maintain) this standard structure:
+In order for Fetch Apply to understand your system configuration, you must start with (and maintain) this standard structure:
 
 ```
 .
@@ -246,7 +247,7 @@ scp
 ufw
 ```
 
-- Special Files will only affect servers that are part of the same class that the Special Files are located in. This allows you to specify and apply different modules, initializers, and roles to different classes of hosts.
+- Special Files will only affect systems that are part of the same class that the Special Files are located in. This allows you to specify and apply different modules, initializers, and roles to different classes of hosts.
 
 ## Reserved Elements
 
@@ -254,7 +255,7 @@ In order to prevent errors and unexpected behavior, Fetch Apply must reserve cer
 
 #### Reserved File and Directory Names
 
-Fetch Apply reserves the file and directory names of all Special Files (`initializers`, `modules`, and `roles`) on a global level. This means that no other type of file or directory within your operations repository's should be given the same name as a Special File. If you do give a different file one of the reserved file/directory names, then Fetch Apply may treat it as if it were that Reserved or Special File, leading to errors or unexpected behavior. The `variables` and `classes` file/directory names are also reserved on a global level.
+Fetch Apply reserves the file and directory names of all Special Files (`initializers`, `modules`, and `roles`) on a global level. This means that no other type of file or directory within your operations repository's should be given the same name as a Special File. If you do give a different file one of the reserved file/directory names, then Fetch Apply may treat it as if it were that Special File, resulting in errors or unexpected behavior. The `variables` and `classes` file/directory names are also reserved on a global level.
 
 When inside of a class directory, the file/directory name `assignments` is reserved, as this file is used to specify manual class assignments.
 
@@ -318,7 +319,7 @@ Servers within the `webserver` class will likely share similar maintenance tasks
 
 Because each webserver's hostname contains `webserver` somewhere within it, and each database server's hostname contains `database` somewhere within it, yet no webserver's hostname contains `database` within it and no database server's hostname contains `webserver` within it, Fetch Apply will automatically identify and associate each server with its correct class. Fetch Apply's automatic class identification is case insensitive.
 
-It is possible to make exceptions to Fetch Apply's automatic class identification by including an `assignments` file within a class directory. In this file, you should list, one per line, the hostname of each system to which you would also like the class applied. This will force the class to be applied to any specified hosts, regardless of whether or not their hostname matches with the class name. A host given a specific class assignment will still have any other, applicable classes applied to it, as determined by automatic class detection and assignment. If you wish to disable automatic class detection and assignment, and opt for manually assigning each host to its class(es) via `assignments` files within your class directories, then you may set `fa_var_AUTOMATIC_CLASS_ASSIGNMENT` equal to `false`, in your Fetch Apply configuration file (located at `/etc/fetch-apply`).
+It is possible to make exceptions to Fetch Apply's automatic class identification by including an `assignments` file within a class directory. In this file, you should list, one per line, the hostname of each system to which you would also like the class applied. This will force the class to be applied to any specified hosts, regardless of whether or not their hostname matches with the class name. A host given a specific class assignment will still have any other, applicable classes applied to it, as determined by automatic class detection and assignment. If you wish to disable automatic class detection and assignment, and opt for manually assigning each host to its class(es) via `assignments` files within your class directories, you may set `fa_var_AUTOMATIC_CLASS_ASSIGNMENT` equal to `false` in your Fetch Apply configuration file (located at `/etc/fetch-apply`).
 
 While `assignments` files are optional, keep in mind that every class directory **must** contain the following files (although they may be left blank):
 
@@ -336,7 +337,7 @@ For the applicable host, all **class** Special Files will be executed first, fol
 
 If you wish for host-specific Special Files to override the class's Special Files (as opposed to supplementing them), preventing the class's corresponding Special Files from being run for that host, create a file in the desired host directory named `override`. This file may be left blank.
 
-If override mode is set for a host, but no overriding Special File is found in the host directory, the class's Special File will still be run. This allows you to specify only certain Special Files that should be overridden/customized for the specific host, while still allowing the host to use the class's "default" Special Files for any Special Files that has not been included in the host directory. If you simply wish to prevent a class's Special File from being run for a specific host, but do not have any actions that you would like to override it with, create a blank Special File of the same type in the host directory and activate override mode for that host.
+If override mode is set for a host, but no overriding Special File is found in the host directory, the class's Special File will still be run. This allows you to specify only certain Special Files that should be overridden/customized for the specific host, while still allowing the host to use the class's "default" Special Files for any Special Files that have not been included in the host directory. If you simply wish to prevent a class's Special File from being run for a specific host, but do not have any actions that you would like to override it with, create a blank Special File of the same type in the host directory and activate override mode for that host.
 
 To review, every host directory **may** contain the following files (and they may be left blank):
 
@@ -352,7 +353,7 @@ Initializers are installation/set-up scripts that are designed to be run only on
 
 Initializers are created by adding a file with the desired commands to be run, to the `initializers` **directory**. The name of the file you create within that directory will be the name of the initializer.
 
-To apply an initializer to a class or host, list the name of the initializer (or list one name per line, if assigning multiple initializers) to the `initializers` Special File in the desired class or host directory.
+To apply an initializer to a class or host, add the name of the initializer (or list one name per line, if assigning multiple initializers) to the `initializers` Special File in the desired class or host directory.
 
 Note that all initializers will be executed from the context of the `initializers` directory. Therefore, it's possible to create additional, supporting files for that initializer (or better yet, create a single directory within the `initializers` directory for each initializer, to contain its supporting files), and then reference them using their relative paths.
 
@@ -425,7 +426,7 @@ However, where `mo` differs from `cat`, is that it allows for more-advanced must
 
 Note: While `mo` does come built-in for convenience, it is not required, and any of the alternate commands listed above would work just as well, if you don't need bash templating functionality.
 
-The final consideration to make when creating or updating your modules is how you would like them to run. By default, each applicable module will be executed every time Fetch Apply runs. For the vast majority of users, this is best practice. It allows you to ensure that your system will always maintain the desired state. For example, if you upgrade a package and accidentally choose to install the package maintainer's default version of the configuration file, instead of keeping your custom version, Fetch Apply will automatically correct this error the next time that package's module runs. The same goes for any other tinkering that may occur on your system, allowing Fetch Apply to automatically reset and maintain firewall rules, always rotate log files, consistently send out scheduled emails, etc. By enforcing your system's state through consistently-executed Fetch Apply modules, you ensure that no permanent changes happen to parts of your system for which you've written a module, unless those changes are committed to your operations repository. This means that you will always have a timestamped, user-attributable, complete version history of all changes to your system, aiding with compliance, error identification and recovery, and more. That being said, there are some users for whom this approach doesn't work. These users may be working in high-availability environments, have modules that cannot be efficiently executed, and/or need the flexibility to make persistent changes in their environments for extended periods of time, before committing them to the operations repository. In these cases, Fetch Apply includes two settings in its configuration file which may be activated to better suite the needs of these types of environments. The first setting, `fa_var_EXECUTE_ON_CHANGE`, when set to `true`, will automatically check the remote origin of the operations repository for any changes since the last time Fetch Apply was run. If no changes are found, then no operations (modules, patches, or initializers) will be run. On the other hand, if *any* updates have been made to the repository, then all operations (all applicable modules, new patches, and new initializers) will be run. The second setting, `fa_var_EXECUTE_IF_MODIFIED`, when set to `true`, takes the previous setting a step further, and will only execute the specific operations that have been modified since the last time Fetch Apply was run, if any. This means that only new patches, new initializers, and new or modified modules will be executed. Be careful when activating this setting immediately after installing Fetch Apply, because none of the assigned modules will run on that system until they have been updated on the operations repository's remote origin.
+The final consideration to make when creating or updating your modules is how you would like them to run. By default, each applicable module will be executed every time Fetch Apply runs. For the vast majority of users, this is best practice. It allows you to ensure that your system will always maintain the desired state. For example, if you upgrade a package and accidentally choose to install the package maintainer's default version of the configuration file, instead of keeping your custom version, Fetch Apply will automatically correct this error the next time that package's module runs. The same goes for any other tinkering that may occur on your system, allowing Fetch Apply to automatically reset and maintain firewall rules, always rotate log files, consistently send out scheduled emails, etc. By enforcing your system's state through consistently-executed Fetch Apply modules, you ensure that no permanent changes happen to parts of your system for which you've written a module, unless those changes are committed to your operations repository. This means that you will always have a timestamped, user-attributable, complete version history of all changes to your system, aiding with compliance, error identification and recovery, and more. That being said, there are some users for whom this approach doesn't work. These users may be working in high-availability environments, have modules that cannot be efficiently executed, and/or need the flexibility to make persistent changes in their environments for extended periods of time, before committing them to the operations repository. In these cases, Fetch Apply includes two settings in its configuration file which may be activated to better suite the needs of these types of environments. The first setting, `fa_var_EXECUTE_ON_CHANGE`, when set to `true`, will automatically check the remote origin of the operations repository for any changes since the last time Fetch Apply was run. If no changes are found, then no operations (initializers, modules, or patches) will be run. On the other hand, if *any* updates have been made to the repository, then all operations (all applicable new initializers, modules, and new patches) will be run. The second setting, `fa_var_EXECUTE_IF_MODIFIED`, when set to `true`, takes the previous setting a step further, and will only execute the specific operations that have been modified since the last time Fetch Apply was run, if any. This means that only new initializers, new or modified modules, and new patches will be executed. Be careful when activating this setting immediately after installing Fetch Apply, because none of the assigned modules will run on that system until they have been updated in the operations repository's remote origin.
 
 ## Roles
 
@@ -440,15 +441,17 @@ fail2ban
 motd
 ```
 
-To apply a role to a class or host (and therefore, by extension, run all of the role's modules on the specified class/host devices), simply include the name of the role (or list one name per line, if assigning multiple roles) to the `roles` Special File in the desired class or host directory.
+To apply a role to a class or host (and therefore, by extension, run all of the role's modules on the applicable class/host system(s)), simply include the name of the role (or list one name per line, if assigning multiple roles) to the `roles` Special File in the desired class or host directory.
 
 ## Patches
 
 Patches are "quick and dirty" scripts that are designed to be run first, but only once, on an applicable system. Their goal is to apply quick fixes and modifications to alleviate security issues or correct unexpected bugs that could not be planned for ahead of time (i.e. mitigated during initialization) and must be fixed in a one-off manner (i.e. cannot be included as part of an idempotent module).
 
-Patches can be deployed by creating a `patches` directory within the class or host directory that you would like to apply the patch to, and then adding a patch in the form of a Bash script within that directory. A host will immediately attempt to execute any new files found within a `patches` directory applicable to that host. This means that you may name your patches whatever you'd like (as long as each patch's name is unique across all `patches` directories that may apply to a system)... however it also means that you may **not** include supporting files directly within the `patches` directory. Instead, a subdirectory (inside of the `patches` directory) should be made for each patch file that relies upon supporting files, and then those supporting files should be placed in that subdirectory. All patches will be run from the context of the containing `patches` directory, meaning that relative paths may be used in your code. Although patch scripts must be written in Bash, just like with modules, it's perfectly valid to just use a patch file to run a script (included as a "supporting file") in another language or to execute a binary.
+Patches can be deployed by creating a `patches` directory within the class or host directory that you would like to apply the patch to, and then adding a patch in the form of a Bash script within that directory. A host will immediately attempt to execute any new files found within a `patches` directory applicable to that host. This means that you may name your patches whatever you'd like (as long as each patch's name is unique across all `patches` directories that may apply to a host)... however it also means that you may **not** include supporting files directly within the `patches` directory. Instead, a subdirectory (inside of the `patches` directory) should be made for each patch file that relies upon supporting files, and then those supporting files should be placed in that subdirectory. All patches will be run from the context of the containing `patches` directory, meaning that relative paths may be used in your code. Although patch scripts must be written in Bash, just like with modules, it's perfectly valid to just use a patch file to run a script (included as a "supporting file") in another language, or to execute a binary.
 
-Unlike initializers and modules, which are meant to be well-developed and modified/optimized over time, patches are designed to provide quick, one-time fixes. For that reason, once a patch has been run, Fetch Apply will never run that patch again. By design, all new patches need to be represented by separate files. Simply modifying a current patch file that has already been run by Fetch Apply will not work, and will not result in that updated code being applied. For compliance and troubleshooting purposes, most organizations retain all of the files in their `patches` directories for at least six months, keeping the patches easily and readily accessible. Because patches are usually retained for a class, the first time Fetch Apply is run on a system, it will automatically mark any already-existing patches as completed, so that they will not be applied to the new system. You are welcome to delete a patch at any point, however make sure that deletion has time to sync with Fetch Apply across applicable systems before creating a new patch with the same name, otherwise the new patch will not be run.
+Unlike initializers and modules, which are meant to be well-developed and modified/optimized over time, patches are designed to provide quick, one-time fixes. For that reason, once a patch has been run, Fetch Apply will never run that patch again. By design, all new patches need to be represented by separate files. Simply modifying a current patch file that has already been run by Fetch Apply will not work, and will not result in that updated code being applied. For compliance and troubleshooting purposes, most organizations retain all of the files in their `patches` directories for at least six months, keeping the patches easily and readily accessible. Because patches are usually retained for a class, the first time Fetch Apply is installed and run on a system, it will automatically mark any already-existing patches as completed, so that they will not be applied to the new system. It is assumed that whatever the issue was that required a patch in the first place, is resolved before a new system is stood up. Therefore, the `fa status` command will still list old, applicable patches as having been applied. If you need to apply an old patch to the new system, you will need to copy it (with a new name) to the `patches` directory for that specific host.
+
+You are welcome to delete a patch at any point, however make sure that the deletion has time to sync with the Fetch Apply instances on all applicable systems before creating a new patch with the same name, otherwise the new patch will not be run. Similarly, make sure that any patch you create has enough time to sync and be executed on all applicable Fetch Apply instances, before deleting it. With a default installation (designed to automatically run Fetch Apply once every 24 hours), you should plan for a sync time of at least 24 hours (unless you manually run Fetch Apply from all applicable systems sooner).
 
 Note: just like with Special Files, class patches may be ignored/overridden for a specific host by including the `patches` directory and an `override` file in the host directory.
 
@@ -456,7 +459,7 @@ Note: just like with Special Files, class patches may be ignored/overridden for 
 
 ## Example Operations Repository
 
-This is an overview of an example `operations` repository for a small organization with the following servers:
+This is an overview of an example "operations" repository for a small organization with the following systems:
 
 - Webservers
   - `ws01.example.com`
@@ -526,4 +529,4 @@ operations/ ----------------------------> The base, operations repository
 
 ## Production Examples:
 
-- [Priveasy Server Configurations](https://git.p5.vc/Priveasy/server-configurations "Priveasy Server Configurations")
+- [Priveasy Server Configurations](https://source.priveasy.org/Priveasy/server-configurations "Priveasy Server Configurations")
