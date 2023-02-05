@@ -150,7 +150,7 @@ Commands:
   recover                  Remove run lock after a failure
   reset                    Reset/clean operations repository to match the remote origin
   resume                   Resume periodic runs after a pause (unset the pause lock)
-  run <module name>        Run a specific module ad hoc (--force automatically set)
+  run <module-name>        Run a specific module ad hoc (--force automatically set)
   status                   Display detailed Fetch Apply status information
 EOF
 }
